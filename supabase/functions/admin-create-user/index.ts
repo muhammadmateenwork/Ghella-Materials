@@ -98,7 +98,14 @@ async function sendInviteEmail(input: {
 
   try {
     await client.send({
-      from: `Ghella Materials <${smtpUser}>`,
+      // No display name here deliberately — "Ghella Materials <personal
+      // Gmail address>" pairs a business identity with a free personal
+      // email provider, which is exactly the shape spam/phishing filters
+      // are trained hardest against (the same pattern as a fake
+      // "PayPal <randomname123@gmail.com>"). Sending as the bare address
+      // reads as an actual person emailing you, not a brand impersonating
+      // one from an account it doesn't own a domain for.
+      from: smtpUser,
       to: input.to,
       subject: "Your Ghella Materials account is ready",
       content: text,
