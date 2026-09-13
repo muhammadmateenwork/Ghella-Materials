@@ -48,13 +48,17 @@ export function useUpdateUserRole() {
 }
 
 /**
- * Creates a new user account via Supabase's invite-email flow — the new
- * user gets a "set your password" link (the same link mechanism the
- * reset-password flow already handles) instead of an admin-chosen password
- * being emailed to them. Goes through the admin-create-user edge function —
- * the app can never hold the service-role key this requires, and the
- * function independently verifies the caller is maximum-tier before doing
- * anything.
+ * Creates a new user account and returns a one-time "set your password"
+ * link for the admin to hand to them directly (WhatsApp, text, in person)
+ * — the link is generated but never emailed. Supabase's own auto-sent
+ * invite email was tested and reliably landed in spam for every recipient,
+ * including ones with no prior history with this project, unlike the
+ * (recipient-initiated) password-reset email on the same SMTP relay — so
+ * sending it automatically isn't a solvable problem without a dedicated
+ * email domain/service this project doesn't have. Goes through the
+ * admin-create-user edge function — the app can never hold the
+ * service-role key this requires, and the function independently verifies
+ * the caller is maximum-tier before doing anything.
  */
 export function useCreateUser() {
   const supabase = useSupabaseClient();
@@ -67,6 +71,7 @@ export function useCreateUser() {
         email: string;
         name: string;
         role: UserRole;
+        inviteLink: string;
       }>("admin-create-user", { body: input });
       if (error) throw new Error(await extractFunctionErrorMessage(error));
       return data!;

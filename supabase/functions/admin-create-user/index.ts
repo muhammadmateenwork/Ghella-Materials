@@ -1,29 +1,31 @@
-// Creates a new user account and invites them by email, with a chosen
-// initial role (minimum/maximum).
+// Creates a new user account and generates a one-time "set your password"
+// link for them, with a chosen initial role (minimum/maximum).
 //
 // The mobile app can never hold the service-role key needed to create
 // other users' accounts, so this runs server-side: it verifies the caller
 // is a maximum-tier user (using a client scoped to the caller's own JWT,
 // so RLS decides — the same rule enforced everywhere else), then uses the
-// service-role client to invite the new user and set their role.
+// service-role client to create the user and set their role.
 //
-// This uses Supabase Auth's own invite-email flow (admin.inviteUserByEmail)
-// rather than an admin-chosen password emailed out by this function. An
-// earlier version had the admin set a password directly and emailed it —
-// that email (a plaintext password paired with an email address) went
-// straight to spam, since that exact pattern is what phishing/
-// credential-leak spam classifiers are tuned to catch; no amount of
-// reformatting fixes that, only removing the password does. Supabase's own
-// invite/recovery emails only ever contain a secure one-time link, never a
-// password, and are sent through the same Auth SMTP config already proven
-// reliable by the existing password-reset flow — so routing account
-// creation through that same mechanism sidesteps the problem entirely
-// instead of working around it.
+// This deliberately does NOT email the link (admin.inviteUserByEmail did,
+// in an earlier version). Even with plain, branded wording and no password
+// in the body, Supabase's own auto-sent "invite" email still landed in spam
+// for every recipient tested, including ones that had never received
+// anything from this project before — unlike the password-reset email,
+// which is recipient-initiated (expected) rather than admin-initiated
+// (unsolicited), and reaches the inbox fine on the exact same SMTP relay.
+// That gap survives identical content and identical infrastructure, so no
+// further wording change was going to close it without owning a domain and
+// a dedicated transactional email service — not something this project has.
 //
-// The new user clicks the invite link and lands on this app's
-// reset-password page (already built to handle Supabase's various link
-// formats) to set their own password — nothing to relay by hand, nothing
-// transmitted in cleartext.
+// Instead, admin.generateLink() produces the exact same kind of secure,
+// one-time, expiring link as an invite email would — it's just returned to
+// the caller instead of emailed, so the admin can hand it to the new user
+// directly (WhatsApp, text, in person), the same way they already used to
+// hand over a password, except this is a link that only lets them set
+// their own password, never a credential itself. The new user opens the
+// link and lands on this app's reset-password page (already built to
+// handle Supabase's various link formats) to set it.
 //
 // Kept as ONE file (no supabase/functions/_shared import) — the Dashboard's
 // function editor only uploads the single file you paste in, so a relative
@@ -115,13 +117,17 @@ Deno.serve(async (req) => {
   // client-supplied role for anything before that check.
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-  const { data: invited, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { name },
-    redirectTo: siteUrl ? `${siteUrl}/reset-password` : undefined,
+  const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: {
+      data: { name },
+      redirectTo: siteUrl ? `${siteUrl}/reset-password` : undefined,
+    },
   });
 
-  if (inviteError || !invited?.user) {
-    const message = inviteError?.message ?? "Could not create user";
+  if (linkError || !linkData?.user) {
+    const message = linkError?.message ?? "Could not create user";
     const status = /already.*registered|already exists/i.test(message) ? 409 : 400;
     return json({ error: message }, status);
   }
@@ -131,11 +137,14 @@ Deno.serve(async (req) => {
   const { error: roleError } = await adminClient
     .from("profiles")
     .update({ role })
-    .eq("id", invited.user.id);
+    .eq("id", linkData.user.id);
 
   if (roleError) {
     return json({ error: roleError.message }, 500);
   }
 
-  return json({ id: invited.user.id, email, name, role }, 200);
+  return json(
+    { id: linkData.user.id, email, name, role, inviteLink: linkData.properties.action_link },
+    200
+  );
 });

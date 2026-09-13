@@ -11,7 +11,7 @@ import {
   type Profile,
   type UserRole,
 } from "@ghella/shared";
-import { Loader2, Mail, ShieldCheck, Trash2, UserPlus } from "lucide-react";
+import { Copy, Loader2, Mail, ShieldCheck, Trash2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "../../../../components/Badge";
 import { Button } from "../../../../components/Button";
@@ -37,6 +37,7 @@ export default function AdminUsersPage() {
   const [role, setRole] = useState<UserRole>("minimum");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingInvite, setPendingInvite] = useState<{ name: string; link: string } | null>(null);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,15 +53,21 @@ export default function AdminUsersPage() {
     createUser.mutate(
       { ...result.data, siteUrl: window.location.origin },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           setName("");
           setEmail("");
           setRole("minimum");
-          showToast(`Account created for ${result.data.name} — they've been emailed a link to set their password.`);
+          setPendingInvite({ name: result.data.name, link: data.inviteLink });
         },
         onError: (error) => setFormError(getFriendlyErrorMessage(error)),
       }
     );
+  };
+
+  const handleCopyInviteLink = () => {
+    if (!pendingInvite) return;
+    navigator.clipboard.writeText(pendingInvite.link);
+    showToast("Link copied.");
   };
 
   const handleToggleRole = async (user: Profile) => {
@@ -95,10 +102,38 @@ export default function AdminUsersPage() {
     <div className="mx-auto max-w-xl">
       <PageTitle>Users</PageTitle>
 
+      {pendingInvite ? (
+        <Card className="mb-6 border-primary bg-primary-soft">
+          <div className="mb-2 flex items-start justify-between gap-3">
+            <p className="text-sm font-bold text-text">Account created for {pendingInvite.name}</p>
+            <button
+              type="button"
+              onClick={() => setPendingInvite(null)}
+              aria-label="Dismiss"
+              className="shrink-0 text-text-faint hover:text-text"
+            >
+              <X size={16} strokeWidth={2} />
+            </button>
+          </div>
+          <p className="mb-3 text-xs text-text-muted">
+            Share this one-time link with them directly (WhatsApp, text, in person) so they can set their own
+            password. It isn't emailed automatically.
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1 truncate rounded-sm border border-border bg-surface px-3 py-2 text-xs text-text-muted">
+              {pendingInvite.link}
+            </div>
+            <Button type="button" size="sm" icon={Copy} onClick={handleCopyInviteLink}>
+              Copy
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
       <Card className="mb-6">
         <p className="mb-1 text-sm font-bold text-text">Create a new account</p>
         <p className="mb-4 text-xs text-text-faint">
-          They'll get an email with a link to set their own password — no password to share yourself.
+          You'll get a link to share with them directly — no password to send by email.
         </p>
         <form onSubmit={handleCreate}>
           <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} error={fieldErrors.name} />

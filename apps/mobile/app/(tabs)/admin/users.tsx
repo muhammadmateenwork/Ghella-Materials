@@ -9,9 +9,9 @@ import {
   type Profile,
   type UserRole,
 } from "@ghella/shared";
-import { Mail, ShieldCheck, Trash2, UserPlus } from "lucide-react-native";
+import { Mail, Share2, ShieldCheck, Trash2, UserPlus, X } from "lucide-react-native";
 import { useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { Badge } from "../../../src/components/Badge";
 import { Button } from "../../../src/components/Button";
 import { Card } from "../../../src/components/Card";
@@ -38,6 +38,7 @@ export default function AdminUsersScreen() {
   const [role, setRole] = useState<UserRole>("minimum");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingInvite, setPendingInvite] = useState<{ name: string; link: string } | null>(null);
 
   const handleCreate = () => {
     setFormError(null);
@@ -54,15 +55,20 @@ export default function AdminUsersScreen() {
     createUser.mutate(
       { ...result.data, siteUrl: process.env.EXPO_PUBLIC_WEB_URL },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           setName("");
           setEmail("");
           setRole("minimum");
-          showToast(`Account created for ${result.data.name} — they've been emailed a link to set their password.`);
+          setPendingInvite({ name: result.data.name, link: data.inviteLink });
         },
         onError: (error) => setFormError(getFriendlyErrorMessage(error)),
       }
     );
+  };
+
+  const handleShareInviteLink = () => {
+    if (!pendingInvite) return;
+    Share.share({ message: `Set your Ghella Materials password: ${pendingInvite.link}` });
   };
 
   const handleToggleRole = async (user: Profile) => {
@@ -102,10 +108,29 @@ export default function AdminUsersScreen() {
         refreshControl={<ThemedRefreshControl refreshing={usersQuery.isFetching} onRefresh={() => usersQuery.refetch()} />}
         ListHeaderComponent={
           <View style={styles.form}>
+            {pendingInvite ? (
+              <Card style={styles.inviteCard}>
+                <View style={styles.inviteHeader}>
+                  <Text style={styles.inviteTitle}>Account created for {pendingInvite.name}</Text>
+                  <Pressable onPress={() => setPendingInvite(null)} hitSlop={8}>
+                    <X size={16} color={colors.textFaint} strokeWidth={2} />
+                  </Pressable>
+                </View>
+                <Text style={styles.inviteHint}>
+                  Share this one-time link with them directly (WhatsApp, text, in person) so they can set their own
+                  password. It isn't emailed automatically.
+                </Text>
+                <Text style={styles.inviteLink} numberOfLines={1}>
+                  {pendingInvite.link}
+                </Text>
+                <Button title="Share link" icon={Share2} size="sm" onPress={handleShareInviteLink} />
+              </Card>
+            ) : null}
+
             <Card style={styles.formCard}>
               <Text style={styles.sectionTitle}>Create a new account</Text>
               <Text style={styles.hint}>
-                They'll get an email with a link to set their own password — no password to share yourself.
+                You'll get a link to share with them directly — no password to send by email.
               </Text>
               <TextField label="Name" value={name} onChangeText={setName} error={fieldErrors.name} />
               <TextField
@@ -213,6 +238,21 @@ function RoleOption({
 
 const styles = StyleSheet.create({
   form: { paddingTop: spacing.md },
+  inviteCard: { marginBottom: spacing.lg, borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  inviteHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
+  inviteTitle: { ...typography.bodyStrong, fontSize: 14, color: colors.text, flexShrink: 1 },
+  inviteHint: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs, marginBottom: spacing.sm },
+  inviteLink: {
+    ...typography.caption,
+    color: colors.textMuted,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   formCard: { marginBottom: spacing.lg },
   sectionTitle: { ...typography.subtitle, color: colors.text, marginBottom: spacing.sm },
   label: { ...typography.bodyStrong, fontSize: 13, color: colors.text, marginBottom: spacing.xs },

@@ -1,10 +1,10 @@
 import { Platform } from "react-native";
 
 // "Blueprint" — a construction-drawing visual language for a materials
-// system built for a construction joint venture (GAJV): deep blueprint-navy
-// ink, a cool paper-white ground, and one construction-safety-orange accent
-// — the same navy/orange pairing found on site signage, plant, and hi-vis
-// gear, rather than a generic "professional SaaS" palette.
+// system built for Ghella Limited: deep blueprint-navy ink, a cool
+// paper-white ground, and one construction-safety-orange accent — the same
+// navy/orange pairing found on site signage, plant, and hi-vis gear, rather
+// than a generic "professional SaaS" palette.
 export const colors = {
   background: "#F5F7FA",
   surface: "#FFFFFF",
