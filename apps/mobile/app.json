@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Ghella Materials",
+    "slug": "ghella-materials",
+    "scheme": "ghellamaterials",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ghella.materials"
+    },
+    "android": {
+      "package": "com.ghella.materials",
+      "adaptiveIcon": {
+        "backgroundColor": "#0E1B33",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ghella Materials uses your photo library to attach photos of warehouse items.",
+          "cameraPermission": "Ghella Materials uses your camera to take photos of warehouse items.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#0E1B33"
+        }
+      ]
+    ]
+  }
+}

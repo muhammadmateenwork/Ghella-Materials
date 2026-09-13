@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   "Blueprint" — a construction-drawing visual language for a materials
+   system built for a construction joint venture (GAJV). Deep blueprint-navy
+   ink, cool paper-white ground, and a single construction-safety-orange
+   accent — the same orange/navy pairing on site signage, plant, and hi-vis
+   gear, rather than a generic SaaS palette. Shapes are crisp and
+   hairline-bordered like linework on a drawing, not soft rounded cards.
+   ========================================================================== */
+
+:root {
+  --color-background: #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #EAEEF3;
+  --color-border: #D7DEE7;
+  --color-border-strong: #AEB9C9;
+
+  --color-text: #14213D;
+  --color-text-muted: #55617A;
+  --color-text-faint: #8A93A8;
+
+  --color-ink: #14213D;
+  --color-ink-dark: #0C1526;
+  --color-primary: #E8590C;
+  --color-primary-dark: #C24A08;
+  --color-primary-soft: #FCE3D1;
+  --color-primary-text: #14213D;
+
+  --color-accent: #14213D;
+  --color-accent-soft: #DCE1E9;
+
+  --color-success: #1F7A4D;
+  --color-success-soft: #DDF0E6;
+  --color-danger: #C1272D;
+  --color-danger-soft: #FADBDA;
+  --color-warning: #B8860B;
+  --color-warning-soft: #F3E8C8;
+}
+
+@theme inline {
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-alt: var(--color-surface-alt);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-faint: var(--color-text-faint);
+
+  --color-ink: var(--color-ink);
+  --color-ink-dark: var(--color-ink-dark);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-text: var(--color-primary-text);
+
+  --color-accent: var(--color-accent);
+  --color-accent-soft: var(--color-accent-soft);
+
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+  background-image:
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  background-attachment: fixed;
+}
+
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--color-ink);
+}
+
+/* Themed scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-strong);
+  border-radius: 2px;
+  border: 2px solid var(--color-background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-faint);
+}
+
+/* Visible, on-brand focus ring for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Every route's content fades/lifts in on mount */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-transition {
+  animation: page-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.card-in {
+  animation: card-in 380ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .page-transition,
+  .card-in {
+    animation: none;
+  }
+}
+
+/* Stack loader — the brand mark's three ascending bars rising off their
+   foundation line, with the corner registration tick blinking like a
+   cursor. Each bar keeps its bottom edge pinned to the baseline (y=76)
+   while animating its own height, echoing materials stacking up rather
+   than a generic spinner. */
+@keyframes loader-bar-1 {
+  0%, 100% { y: 69.4px; height: 6.6px; opacity: 0.5; }
+  50% { y: 54px; height: 22px; opacity: 1; }
+}
+
+@keyframes loader-bar-2 {
+  0%, 100% { y: 66.4px; height: 9.6px; opacity: 0.5; }
+  50% { y: 44px; height: 32px; opacity: 1; }
+}
+
+@keyframes loader-bar-3 {
+  0%, 100% { y: 62.8px; height: 13.2px; opacity: 0.5; }
+  50% { y: 32px; height: 44px; opacity: 1; }
+}
+
+.loader-bar-1 { animation: loader-bar-1 1.3s ease-in-out infinite; animation-delay: 0s; }
+.loader-bar-2 { animation: loader-bar-2 1.3s ease-in-out infinite; animation-delay: 0.15s; }
+.loader-bar-3 { animation: loader-bar-3 1.3s ease-in-out infinite; animation-delay: 0.3s; }
+
+@keyframes loader-tick {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.loader-tick { animation: loader-tick 1.3s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-bar-1, .loader-bar-2, .loader-bar-3, .loader-tick {
+    animation: none;
+    opacity: 1;
+  }
+  .loader-bar-1 { y: 54px; height: 22px; }
+  .loader-bar-2 { y: 44px; height: 32px; }
+  .loader-bar-3 { y: 32px; height: 44px; }
+}
+
+/* Success overlay */
+@keyframes success-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes success-pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes success-ring {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes success-check {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
