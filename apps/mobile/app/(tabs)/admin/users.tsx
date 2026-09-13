@@ -38,7 +38,9 @@ export default function AdminUsersScreen() {
   const [role, setRole] = useState<UserRole>("minimum");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [pendingInvite, setPendingInvite] = useState<{ name: string; link: string } | null>(null);
+  const [pendingInvite, setPendingInvite] = useState<{ name: string; link: string; emailSent: boolean } | null>(
+    null
+  );
 
   const handleCreate = () => {
     setFormError(null);
@@ -59,7 +61,7 @@ export default function AdminUsersScreen() {
           setName("");
           setEmail("");
           setRole("minimum");
-          setPendingInvite({ name: result.data.name, link: data.inviteLink });
+          setPendingInvite({ name: result.data.name, link: data.inviteLink, emailSent: data.emailSent });
         },
         onError: (error) => setFormError(getFriendlyErrorMessage(error)),
       }
@@ -117,8 +119,9 @@ export default function AdminUsersScreen() {
                   </Pressable>
                 </View>
                 <Text style={styles.inviteHint}>
-                  Share this one-time link with them directly (WhatsApp, text, in person) so they can set their own
-                  password. It isn't emailed automatically.
+                  {pendingInvite.emailSent
+                    ? "We've emailed them a link to set their password. If it doesn't arrive (check spam), share this link directly instead:"
+                    : "The email didn't send — share this one-time link with them directly (WhatsApp, text, in person):"}
                 </Text>
                 <Text style={styles.inviteLink} numberOfLines={1}>
                   {pendingInvite.link}
@@ -130,7 +133,7 @@ export default function AdminUsersScreen() {
             <Card style={styles.formCard}>
               <Text style={styles.sectionTitle}>Create a new account</Text>
               <Text style={styles.hint}>
-                You'll get a link to share with them directly — no password to send by email.
+                They'll be emailed a link to set their own password — no password to share yourself.
               </Text>
               <TextField label="Name" value={name} onChangeText={setName} error={fieldErrors.name} />
               <TextField

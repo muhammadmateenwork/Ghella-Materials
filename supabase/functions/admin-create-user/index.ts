@@ -1,5 +1,6 @@
-// Creates a new user account and generates a one-time "set your password"
-// link for them, with a chosen initial role (minimum/maximum).
+// Creates a new user account, generates a one-time "set your password"
+// link for them, and emails that link — with a chosen initial role
+// (minimum/maximum).
 //
 // The mobile app can never hold the service-role key needed to create
 // other users' accounts, so this runs server-side: it verifies the caller
@@ -7,25 +8,33 @@
 // so RLS decides — the same rule enforced everywhere else), then uses the
 // service-role client to create the user and set their role.
 //
-// This deliberately does NOT email the link (admin.inviteUserByEmail did,
-// in an earlier version). Even with plain, branded wording and no password
-// in the body, Supabase's own auto-sent "invite" email still landed in spam
-// for every recipient tested, including ones that had never received
-// anything from this project before — unlike the password-reset email,
-// which is recipient-initiated (expected) rather than admin-initiated
-// (unsolicited), and reaches the inbox fine on the exact same SMTP relay.
-// That gap survives identical content and identical infrastructure, so no
-// further wording change was going to close it without owning a domain and
-// a dedicated transactional email service — not something this project has.
+// The link is generated with admin.generateLink() rather than sent via
+// admin.inviteUserByEmail() (an earlier version used that). Both produce
+// the same kind of secure, one-time, expiring link, but generateLink()
+// hands the link back to the caller instead of Supabase auto-mailing it —
+// which matters because Supabase's own "invite" email reliably landed in
+// spam in testing, for every recipient including ones with no prior
+// history with this project, unlike the (recipient-initiated) password-
+// reset email on the exact same SMTP relay. That gap survives identical
+// wording and identical infrastructure, and isn't closeable without owning
+// a domain and a dedicated transactional email service.
 //
-// Instead, admin.generateLink() produces the exact same kind of secure,
-// one-time, expiring link as an invite email would — it's just returned to
-// the caller instead of emailed, so the admin can hand it to the new user
-// directly (WhatsApp, text, in person), the same way they already used to
-// hand over a password, except this is a link that only lets them set
-// their own password, never a credential itself. The new user opens the
-// link and lands on this app's reset-password page (already built to
-// handle Supabase's various link formats) to set it.
+// So this function does both: it emails the link itself (best-effort, over
+// the same Gmail SMTP already configured for the reset-password flow) AND
+// returns the link in the response so the admin UI can show a copy/share
+// action. The email may still land in spam — that risk hasn't gone away —
+// but the admin always has the link to hand over directly (WhatsApp, text,
+// in person) as a fallback that isn't email-deliverability-dependent.
+// A failed send never fails account creation.
+//
+// The new user opens the link and lands on this app's reset-password page
+// (already built to handle Supabase's various link formats) to set their
+// password — nothing transmitted in cleartext either way.
+//
+// Requires SMTP_USER / SMTP_PASSWORD to be set as Edge Function secrets
+// (Project Settings > Edge Functions > Secrets) — the same Gmail address
+// and app password already configured for Supabase Auth's own emails.
+// Functions can't read Auth's SMTP config, so it's set again here.
 //
 // Kept as ONE file (no supabase/functions/_shared import) — the Dashboard's
 // function editor only uploads the single file you paste in, so a relative
@@ -35,6 +44,7 @@
 // Deploy with: supabase functions deploy admin-create-user
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,6 +57,65 @@ function json(body: unknown, status: number) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Sends only the one-time link — never a password (see comment above the
+// imports for why that distinction matters) — kept plain (no images, no
+// tracking, no button-styled links) for the same reason as the rest of this
+// app's transactional email: a templated/marketing look is itself a spam
+// signal for unsolicited account-notification content.
+// ---------------------------------------------------------------------------
+
+async function sendInviteEmail(input: {
+  to: string;
+  name: string;
+  link: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const smtpUser = Deno.env.get("SMTP_USER");
+  const smtpPassword = Deno.env.get("SMTP_PASSWORD");
+  if (!smtpUser || !smtpPassword) {
+    return { sent: false, error: "SMTP_USER / SMTP_PASSWORD are not configured for this function" };
+  }
+
+  const hostname = Deno.env.get("SMTP_HOST") ?? "smtp.gmail.com";
+  const port = Number(Deno.env.get("SMTP_PORT") ?? "465");
+
+  const client = new SMTPClient({
+    connection: {
+      hostname,
+      port,
+      tls: true,
+      auth: { username: smtpUser, password: smtpPassword },
+    },
+  });
+
+  const text =
+    `Hi ${input.name},\n\n` +
+    `An account has been set up for you on Ghella Materials, the warehouse materials system for Ghella Limited.\n\n` +
+    `Set your password to get started: ${input.link}\n\n` +
+    `If you weren't expecting this, you can safely ignore this email.\n\n` +
+    `— Ghella Materials`;
+
+  try {
+    await client.send({
+      from: `Ghella Materials <${smtpUser}>`,
+      to: input.to,
+      subject: "Your Ghella Materials account is ready",
+      content: text,
+    });
+    return { sent: true };
+  } catch (err) {
+    return { sent: false, error: err instanceof Error ? err.message : "Unknown SMTP error" };
+  } finally {
+    try {
+      await client.close();
+    } catch {
+      // Already closed/failed to connect — nothing to clean up.
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -143,8 +212,22 @@ Deno.serve(async (req) => {
     return json({ error: roleError.message }, 500);
   }
 
+  const inviteLink = linkData.properties.action_link;
+  const emailResult = await sendInviteEmail({ to: email, name, link: inviteLink });
+  if (!emailResult.sent) {
+    console.error("Invite email not sent:", emailResult.error);
+  }
+
   return json(
-    { id: linkData.user.id, email, name, role, inviteLink: linkData.properties.action_link },
+    {
+      id: linkData.user.id,
+      email,
+      name,
+      role,
+      inviteLink,
+      emailSent: emailResult.sent,
+      emailError: emailResult.error,
+    },
     200
   );
 });

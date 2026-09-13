@@ -37,7 +37,9 @@ export default function AdminUsersPage() {
   const [role, setRole] = useState<UserRole>("minimum");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [pendingInvite, setPendingInvite] = useState<{ name: string; link: string } | null>(null);
+  const [pendingInvite, setPendingInvite] = useState<{ name: string; link: string; emailSent: boolean } | null>(
+    null
+  );
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +59,7 @@ export default function AdminUsersPage() {
           setName("");
           setEmail("");
           setRole("minimum");
-          setPendingInvite({ name: result.data.name, link: data.inviteLink });
+          setPendingInvite({ name: result.data.name, link: data.inviteLink, emailSent: data.emailSent });
         },
         onError: (error) => setFormError(getFriendlyErrorMessage(error)),
       }
@@ -116,8 +118,9 @@ export default function AdminUsersPage() {
             </button>
           </div>
           <p className="mb-3 text-xs text-text-muted">
-            Share this one-time link with them directly (WhatsApp, text, in person) so they can set their own
-            password. It isn't emailed automatically.
+            {pendingInvite.emailSent
+              ? "We've emailed them a link to set their password. If it doesn't arrive (check spam), share this link with them directly instead:"
+              : "The email didn't send — share this one-time link with them directly (WhatsApp, text, in person) so they can set their password:"}
           </p>
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1 truncate rounded-sm border border-border bg-surface px-3 py-2 text-xs text-text-muted">
@@ -133,7 +136,7 @@ export default function AdminUsersPage() {
       <Card className="mb-6">
         <p className="mb-1 text-sm font-bold text-text">Create a new account</p>
         <p className="mb-4 text-xs text-text-faint">
-          You'll get a link to share with them directly — no password to send by email.
+          They'll be emailed a link to set their own password — no password to share yourself.
         </p>
         <form onSubmit={handleCreate}>
           <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} error={fieldErrors.name} />

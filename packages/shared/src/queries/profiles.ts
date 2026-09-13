@@ -48,17 +48,17 @@ export function useUpdateUserRole() {
 }
 
 /**
- * Creates a new user account and returns a one-time "set your password"
- * link for the admin to hand to them directly (WhatsApp, text, in person)
- * — the link is generated but never emailed. Supabase's own auto-sent
- * invite email was tested and reliably landed in spam for every recipient,
- * including ones with no prior history with this project, unlike the
- * (recipient-initiated) password-reset email on the same SMTP relay — so
- * sending it automatically isn't a solvable problem without a dedicated
- * email domain/service this project doesn't have. Goes through the
- * admin-create-user edge function — the app can never hold the
- * service-role key this requires, and the function independently verifies
- * the caller is maximum-tier before doing anything.
+ * Creates a new user account, emails them a one-time "set your password"
+ * link (best-effort — a send failure never fails account creation), and
+ * also returns that same link so the admin can share it directly
+ * (WhatsApp, text, in person) as a fallback. That fallback matters because
+ * this kind of unsolicited "account created for you" email reliably lands
+ * in spam for every recipient tested, including ones with no prior history
+ * with this project — unlike the (recipient-initiated) password-reset
+ * email on the same SMTP relay, which isn't a gap closeable by wording
+ * alone. Goes through the admin-create-user edge function — the app can
+ * never hold the service-role key this requires, and the function
+ * independently verifies the caller is maximum-tier before doing anything.
  */
 export function useCreateUser() {
   const supabase = useSupabaseClient();
@@ -72,6 +72,8 @@ export function useCreateUser() {
         name: string;
         role: UserRole;
         inviteLink: string;
+        emailSent: boolean;
+        emailError?: string;
       }>("admin-create-user", { body: input });
       if (error) throw new Error(await extractFunctionErrorMessage(error));
       return data!;
