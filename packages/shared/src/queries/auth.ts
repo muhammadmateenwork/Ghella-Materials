@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { extractFunctionErrorMessage } from "../lib/errors";
 import type { LoginInput } from "../schemas/auth";
 import { useSupabaseClient } from "../supabase/context";
 
@@ -40,8 +41,19 @@ export function useSignOut() {
   });
 }
 
-/** Self-service password change — requires an active session, no current
- * password needed (Supabase authorizes this off the session itself). */
+/**
+ * Self-service password change — requires an active session, no current
+ * password needed (Supabase authorizes this off the session itself). Used
+ * both for the profile page's "change password" and, after clicking a
+ * reset-password email link, for setting a brand new one.
+ *
+ * After a successful change, every OTHER session for this account is
+ * signed out (scope: "others") — the device making the change stays
+ * signed in, but a changed password should actually lock out anyone else
+ * still holding a session (a lost device, or a compromised account), not
+ * just block future sign-ins with the old password. Best-effort: a
+ * failure here doesn't undo or fail the password change itself.
+ */
 export function useChangePassword() {
   const supabase = useSupabaseClient();
 
@@ -49,16 +61,38 @@ export function useChangePassword() {
     mutationFn: async (password: string) => {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+      try {
+        await supabase.auth.signOut({ scope: "others" });
+      } catch {
+        // Non-critical — the password itself is already changed.
+      }
     },
   });
 }
 
-/** Sends a password-reset email containing a link to `redirectTo`. */
+/**
+ * Sends a password-reset email containing a link to `redirectTo` — but
+ * first checks whether an account exists for that email at all, via the
+ * check-email-exists edge function (profiles has no anon-read RLS policy,
+ * so this can't be checked directly from the client). Surfaces a clear
+ * "no account" error immediately rather than the standard privacy-
+ * preserving "if an account exists..." non-answer, at the client's
+ * explicit request for this admin-provisioned-accounts app.
+ */
 export function useRequestPasswordReset() {
   const supabase = useSupabaseClient();
 
   return useMutation({
     mutationFn: async (input: { email: string; redirectTo?: string }) => {
+      const { data: checkData, error: checkError } = await supabase.functions.invoke<{ exists: boolean }>(
+        "check-email-exists",
+        { body: { email: input.email } }
+      );
+      if (checkError) throw new Error(await extractFunctionErrorMessage(checkError));
+      if (!checkData?.exists) {
+        throw new Error("No account found with this email.");
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
         redirectTo: input.redirectTo,
       });

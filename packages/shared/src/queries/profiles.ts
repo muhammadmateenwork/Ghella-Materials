@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { extractFunctionErrorMessage } from "../lib/errors";
 import type { CreateUserInput } from "../schemas/user";
 import { useSupabaseClient } from "../supabase/context";
 import type { Profile, UserRole } from "../types/database";
@@ -104,25 +105,4 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: queryKeys.users() });
     },
   });
-}
-
-/**
- * supabase-js's functions.invoke() error carries the raw HTTP Response on
- * `.context`, not the JSON error message our function actually returned —
- * without this, every failure would surface as a generic
- * "non-2xx status code" instead of e.g. "Email already registered".
- */
-async function extractFunctionErrorMessage(error: unknown): Promise<string> {
-  if (error && typeof error === "object" && "context" in error) {
-    const context = (error as { context?: unknown }).context;
-    if (context instanceof Response) {
-      try {
-        const body = await context.clone().json();
-        if (typeof body?.error === "string") return body.error;
-      } catch {
-        // fall through to the generic message below
-      }
-    }
-  }
-  return error instanceof Error ? error.message : "Something went wrong";
 }

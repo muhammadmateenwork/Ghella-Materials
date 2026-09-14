@@ -33,3 +33,24 @@ export function getFriendlyErrorMessage(error: unknown): string {
   if (rule) return rule.message;
   return raw.trim() || "Something went wrong. Please try again.";
 }
+
+/**
+ * supabase-js's functions.invoke() error carries the raw HTTP Response on
+ * `.context`, not the JSON error message the function actually returned —
+ * without this, every edge-function failure would surface as a generic
+ * "non-2xx status code" instead of e.g. "Email already registered".
+ */
+export async function extractFunctionErrorMessage(error: unknown): Promise<string> {
+  if (error && typeof error === "object" && "context" in error) {
+    const context = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      try {
+        const body = await context.clone().json();
+        if (typeof body?.error === "string") return body.error;
+      } catch {
+        // fall through to the generic message below
+      }
+    }
+  }
+  return error instanceof Error ? error.message : "Something went wrong";
+}

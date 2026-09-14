@@ -51,6 +51,15 @@ export default function ResetPasswordPage() {
         | "invite"
         | "email";
 
+      // If this browser already has a session for a different account
+      // (e.g. the admin who sent this invite, still signed in from
+      // creating it), that session has to be cleared before establishing
+      // the new one below — otherwise it can win the race and this page
+      // ends up authenticated as whoever was already logged in instead of
+      // whoever the link was actually for. Local-only: this doesn't touch
+      // the existing account's session anywhere else, just this browser.
+      await supabase.auth.signOut({ scope: "local" });
+
       let error: { message: string } | null = null;
 
       if (accessToken && refreshToken) {
@@ -135,14 +144,14 @@ export default function ResetPasswordPage() {
 
               <form onSubmit={handleSubmit}>
                 <PasswordField
-                  label="New password"
+                  label="New password *"
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   error={fieldErrors.password}
                 />
                 <PasswordField
-                  label="Confirm new password"
+                  label="Confirm new password *"
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
