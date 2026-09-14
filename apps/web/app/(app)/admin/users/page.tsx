@@ -150,7 +150,7 @@ export default function AdminUsersPage() {
 
           <div className="mb-4">
             <span className="mb-1.5 block text-sm font-semibold text-text">Access level</span>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <RoleOption label="Standard" selected={role === "minimum"} onClick={() => setRole("minimum")} />
               <RoleOption label="Maximum" selected={role === "maximum"} onClick={() => setRole("maximum")} />
             </div>
