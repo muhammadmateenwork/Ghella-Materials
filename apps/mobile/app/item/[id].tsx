@@ -13,7 +13,7 @@ import {
 import { Image } from "expo-image";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { ImageOff, PackageCheck, Tag } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -46,10 +46,17 @@ export default function ItemDetailScreen() {
   const { width } = useWindowDimensions();
 
   const [quantity, setQuantity] = useState("1");
-  const [contactInfo, setContactInfo] = useState(profile?.email ?? "");
+  const [contactInfo, setContactInfo] = useState("");
+  const [contactInfoTouched, setContactInfoTouched] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [activePhoto, setActivePhoto] = useState(0);
+
+  useEffect(() => {
+    if (!contactInfoTouched && profile?.email) {
+      setContactInfo(profile.email);
+    }
+  }, [contactInfoTouched, profile?.email]);
 
   if (!isSessionLoading && !session) {
     return <Redirect href="/(auth)/login" />;
@@ -200,7 +207,10 @@ export default function ItemDetailScreen() {
             <TextField
               label="Contact info (name, phone, or email) *"
               value={contactInfo}
-              onChangeText={setContactInfo}
+              onChangeText={(text) => {
+                setContactInfoTouched(true);
+                setContactInfo(text);
+              }}
               error={fieldErrors.contact_info}
             />
             {formError ? <Text style={styles.formError}>{formError}</Text> : null}

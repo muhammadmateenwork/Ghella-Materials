@@ -88,5 +88,5 @@ const styles = StyleSheet.create({
   name: { ...typography.subtitle, color: colors.text },
   idNumber: { ...typography.caption, color: colors.textMuted },
   badgeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 2 },
-  condition: { ...typography.caption, color: colors.textFaint },
+  condition: { ...typography.caption, color: colors.textFaint, flexShrink: 1 },
 });

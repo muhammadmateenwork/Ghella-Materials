@@ -96,5 +96,5 @@ const styles = StyleSheet.create({
   itemName: { ...typography.subtitle, color: colors.text, flexShrink: 1 },
   itemNameRemoved: { color: colors.textFaint, fontStyle: "italic" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-  meta: { ...typography.caption, color: colors.textMuted },
+  meta: { ...typography.caption, color: colors.textMuted, flexShrink: 1 },
 });

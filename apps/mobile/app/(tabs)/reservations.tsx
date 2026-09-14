@@ -7,7 +7,7 @@ import {
 import { router } from "expo-router";
 import { CalendarClock, PackageOpen } from "lucide-react-native";
 import { useMemo } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge } from "../../src/components/Badge";
 import { Card } from "../../src/components/Card";
 import { useConfirm } from "../../src/components/ConfirmDialog";
@@ -106,23 +106,25 @@ export default function MyReservationsScreen() {
                 </Text>
               </View>
               {reservation.status === "active" ? (
-                <Text
-                  style={[
-                    styles.cancelLink,
-                    cancelReservation.isPending &&
-                      cancelReservation.variables === reservation.id &&
-                      styles.cancelLinkDisabled,
-                  ]}
-                  onPress={
-                    cancelReservation.isPending && cancelReservation.variables === reservation.id
-                      ? undefined
-                      : () => handleCancel(reservation)
-                  }
+                <Pressable
+                  hitSlop={8}
+                  disabled={cancelReservation.isPending && cancelReservation.variables === reservation.id}
+                  onPress={() => handleCancel(reservation)}
+                  style={styles.cancelLinkWrap}
                 >
-                  {cancelReservation.isPending && cancelReservation.variables === reservation.id
-                    ? "Cancelling…"
-                    : "Cancel reservation"}
-                </Text>
+                  <Text
+                    style={[
+                      styles.cancelLink,
+                      cancelReservation.isPending &&
+                        cancelReservation.variables === reservation.id &&
+                        styles.cancelLinkDisabled,
+                    ]}
+                  >
+                    {cancelReservation.isPending && cancelReservation.variables === reservation.id
+                      ? "Cancelling…"
+                      : "Cancel reservation"}
+                  </Text>
+                </Pressable>
               ) : null}
             </Card>
           )}
@@ -147,6 +149,7 @@ const styles = StyleSheet.create({
   itemNameRemoved: { color: colors.textFaint, fontStyle: "italic" },
   meta: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   dateRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-  cancelLink: { color: colors.danger, fontSize: 13, fontFamily: fonts.bodyBold, marginTop: spacing.sm },
+  cancelLinkWrap: { alignSelf: "flex-start", marginTop: spacing.sm, paddingVertical: 4 },
+  cancelLink: { color: colors.danger, fontSize: 13, fontFamily: fonts.bodyBold },
   cancelLinkDisabled: { opacity: 0.5 },
 });

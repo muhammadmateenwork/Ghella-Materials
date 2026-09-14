@@ -73,7 +73,7 @@ function ToastRow({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => voi
         <AlertCircle size={18} color={colors.danger} strokeWidth={2} />
       )}
       <Text style={styles.text}>{toast.message}</Text>
-      <Pressable onPress={handleDismiss} hitSlop={8}>
+      <Pressable onPress={handleDismiss} hitSlop={12}>
         <Text style={styles.dismiss}>×</Text>
       </Pressable>
     </Animated.View>

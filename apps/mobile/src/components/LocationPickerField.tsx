@@ -10,6 +10,7 @@ import {
 import { Check, ChevronRight, MapPin, Search, X } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, fonts, radius, spacing, typography } from "../lib/theme";
 
 export function LocationPickerField({
@@ -72,7 +73,7 @@ export function LocationPickerField({
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Modal visible={open} animationType="slide" onRequestClose={close}>
-        <View style={styles.modal}>
+        <SafeAreaView style={styles.modal} edges={["top", "left", "right", "bottom"]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select location</Text>
             <Pressable onPress={close} hitSlop={8} style={styles.closeButton}>
@@ -117,7 +118,7 @@ export function LocationPickerField({
               </Text>
             }
           />
-        </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   value: { fontSize: 16, fontFamily: fonts.body, color: colors.text },
   placeholder: { fontSize: 16, fontFamily: fonts.body, color: colors.textFaint },
   error: { color: colors.danger, fontSize: 12, fontFamily: fonts.bodySemiBold, marginTop: spacing.xs },
-  modal: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.xl },
+  modal: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.md },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
