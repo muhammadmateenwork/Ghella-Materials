@@ -18,3 +18,4 @@ export * from "./queries/locations";
 export * from "./queries/reservations";
 export * from "./queries/profiles";
 export * from "./queries/photos";
+export * from "./queries/pushTokens";
