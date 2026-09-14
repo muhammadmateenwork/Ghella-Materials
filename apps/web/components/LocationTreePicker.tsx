@@ -76,7 +76,7 @@ export function LocationTreePicker({
           }`}
         >
           <MapPin size={16} className="shrink-0 text-text-faint" strokeWidth={2} />
-          <span className={`flex-1 truncate ${value ? "text-text" : "text-text-faint"}`}>
+          <span className={`min-w-0 flex-1 truncate ${value ? "text-text" : "text-text-faint"}`}>
             {value ? getLocationPath(locations, value) : "Select a location"}
           </span>
         </button>
@@ -169,11 +169,11 @@ function TreeRow({
         <button
           type="button"
           onClick={() => onSelect(node.location.id)}
-          className={`flex flex-1 items-center justify-between gap-2 py-2 pr-3 text-left text-sm ${
+          className={`flex min-w-0 flex-1 items-center justify-between gap-2 py-2 pr-3 text-left text-sm ${
             isSelected ? "font-bold text-primary" : "text-text"
           }`}
         >
-          <span className="truncate">{node.location.name}</span>
+          <span className="min-w-0 truncate">{node.location.name}</span>
           {isSelected ? <Check size={15} className="shrink-0" strokeWidth={2.5} /> : null}
         </button>
       </div>

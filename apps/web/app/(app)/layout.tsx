@@ -85,7 +85,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-text">
               {(profile?.name ?? "?").slice(0, 1).toUpperCase()}
             </span>
-            <span className="flex-1 truncate">{profile?.name ?? "Profile"}</span>
+            <span className="min-w-0 flex-1 truncate">{profile?.name ?? "Profile"}</span>
             {isMaxTier ? <Shield size={14} className="text-primary" /> : null}
           </Link>
           <button
@@ -98,8 +98,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col md:ml-64">
-        <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8">
+      <div className="flex min-w-0 min-h-screen flex-1 flex-col md:ml-64">
+        <main className="min-w-0 flex-1 p-4 pb-24 md:p-8 md:pb-8">
           <div key={pathname} className="page-transition mx-auto w-full max-w-5xl">
             {children}
           </div>

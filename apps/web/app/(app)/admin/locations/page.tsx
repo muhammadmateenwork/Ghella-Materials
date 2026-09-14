@@ -199,7 +199,7 @@ export default function AdminLocationsPage() {
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-surface-alt">
                   <MapPinned size={14} className="text-text-muted" strokeWidth={2} />
                 </div>
-                <span className="flex-1 truncate text-sm text-text">{getLocationPath(locations, location.id)}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-text">{getLocationPath(locations, location.id)}</span>
                 <button
                   type="button"
                   onClick={() => startEdit(location)}
