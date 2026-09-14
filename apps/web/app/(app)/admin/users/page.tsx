@@ -176,7 +176,7 @@ export default function AdminUsersPage() {
           {users.map((user) => {
             const isSelf = user.id === currentProfile?.id;
             return (
-              <Card key={user.id} className="flex items-center justify-between gap-3">
+              <Card key={user.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-surface-alt">
                     {user.role === "maximum" ? (
@@ -195,12 +195,13 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
                 {isSelf ? (
-                  <span className="shrink-0 text-xs italic text-text-faint">This is you</span>
+                  <span className="text-xs italic text-text-faint sm:shrink-0">This is you</span>
                 ) : (
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex items-center gap-2 sm:shrink-0">
                     <Button
                       variant="secondary"
                       size="sm"
+                      className="flex-1 sm:flex-none"
                       onClick={() => handleToggleRole(user)}
                       loading={updateRole.isPending && updateRole.variables?.userId === user.id}
                       disabled={deleteUser.isPending && deleteUser.variables === user.id}
@@ -212,7 +213,7 @@ export default function AdminUsersPage() {
                       onClick={() => handleDelete(user)}
                       disabled={deleteUser.isPending && deleteUser.variables === user.id}
                       aria-label={`Delete ${user.name}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-sm text-text-faint transition-colors hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-text-faint transition-colors hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {deleteUser.isPending && deleteUser.variables === user.id ? (
                         <Loader2 size={15} className="animate-spin" strokeWidth={2} />
