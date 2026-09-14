@@ -3,7 +3,7 @@ import { z } from "zod";
 export const itemFormSchema = z.object({
   name: z.string().trim().min(1, "Material name is required"),
   identification_number: z.string().trim().optional().or(z.literal("")),
-  quantity: z.coerce.number().int().min(0, "Quantity cannot be negative"),
+  quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
   // What's being counted (e.g. "bundles", "rolls", "bags") — shown next to
   // the number instead of a bare integer. Optional; blank just shows the
   // number on its own.

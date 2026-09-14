@@ -7,7 +7,11 @@ export function formatQuantity(
   unit?: string | null,
   isApproximate?: boolean
 ): string {
+  // Rounded to 2 decimal places before display — quantities now support
+  // fractions, and subtracting reservations with plain JS floats can
+  // otherwise surface artifacts like 1.5000000000000002.
+  const rounded = Math.round(quantity * 100) / 100;
   const unitSuffix = unit ? ` ${unit}` : "";
-  const count = isApproximate ? `${quantity}+` : `${quantity}`;
+  const count = isApproximate ? `${rounded}+` : `${rounded}`;
   return `${count}${unitSuffix}`;
 }

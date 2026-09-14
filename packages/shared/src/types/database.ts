@@ -184,6 +184,46 @@ export interface Database {
           },
         ];
       };
+      push_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          token: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          token: string;
+        };
+        Update: {
+          user_id?: string;
+          token?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pending_item_notifications: {
+        Row: {
+          id: string;
+          item_name: string;
+          created_at: string;
+          sent: boolean;
+        };
+        Insert: {
+          id?: string;
+          item_name: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: {
       item_availability: {
