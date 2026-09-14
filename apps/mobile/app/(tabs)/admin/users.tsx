@@ -151,11 +151,7 @@ export default function AdminUsersScreen() {
                   selected={role === "minimum"}
                   onPress={() => setRole("minimum")}
                 />
-                <RoleOption
-                  label="Maximum access"
-                  selected={role === "maximum"}
-                  onPress={() => setRole("maximum")}
-                />
+                <RoleOption label="Maximum" selected={role === "maximum"} onPress={() => setRole("maximum")} />
               </View>
 
               {formError ? <Text style={styles.formError}>{formError}</Text> : null}

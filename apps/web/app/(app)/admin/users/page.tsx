@@ -152,11 +152,7 @@ export default function AdminUsersPage() {
             <span className="mb-1.5 block text-sm font-semibold text-text">Access level</span>
             <div className="flex gap-2">
               <RoleOption label="Standard" selected={role === "minimum"} onClick={() => setRole("minimum")} />
-              <RoleOption
-                label="Maximum access"
-                selected={role === "maximum"}
-                onClick={() => setRole("maximum")}
-              />
+              <RoleOption label="Maximum" selected={role === "maximum"} onClick={() => setRole("maximum")} />
             </div>
           </div>
 
@@ -240,7 +236,7 @@ function RoleOption({ label, selected, onClick }: { label: string; selected: boo
     <button
       type="button"
       onClick={onClick}
-      className={`min-w-0 flex-1 truncate rounded-sm border px-1 py-2.5 text-sm font-semibold transition-colors ${
+      className={`min-w-0 flex-1 truncate rounded-sm border px-2 py-2.5 text-center text-sm font-semibold transition-colors ${
         selected ? "border-primary bg-primary text-primary-text" : "border-border bg-surface text-text"
       }`}
     >
