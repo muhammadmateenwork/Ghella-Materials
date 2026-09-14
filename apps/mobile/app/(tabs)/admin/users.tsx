@@ -135,9 +135,9 @@ export default function AdminUsersScreen() {
               <Text style={styles.hint}>
                 They'll be emailed a link to set their own password — no password to share yourself.
               </Text>
-              <TextField label="Name" value={name} onChangeText={setName} error={fieldErrors.name} />
+              <TextField label="Name *" value={name} onChangeText={setName} error={fieldErrors.name} />
               <TextField
-                label="Email"
+                label="Email *"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"

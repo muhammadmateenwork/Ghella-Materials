@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const pngToIco = require("png-to-ico").default;
-const { fullMark, barsOnly, solidBackground, monochrome } = require("./mark");
+const { fullMark, androidAdaptiveForeground, solidBackground, monochrome } = require("./mark");
 
 const ROOT = path.resolve(__dirname, "../..");
 const MOBILE_ASSETS = path.join(ROOT, "apps/mobile/assets");
@@ -17,7 +17,7 @@ async function main() {
   // Mobile app icons
   await render(fullMark, 1024, path.join(MOBILE_ASSETS, "icon.png"));
   await render(fullMark, 1024, path.join(MOBILE_ASSETS, "splash-icon.png"));
-  await render(barsOnly, 512, path.join(MOBILE_ASSETS, "android-icon-foreground.png"));
+  await render(androidAdaptiveForeground, 512, path.join(MOBILE_ASSETS, "android-icon-foreground.png"));
   await render(solidBackground, 512, path.join(MOBILE_ASSETS, "android-icon-background.png"));
   await render(monochrome, 432, path.join(MOBILE_ASSETS, "android-icon-monochrome.png"));
   await render(fullMark, 48, path.join(MOBILE_ASSETS, "favicon.png"));

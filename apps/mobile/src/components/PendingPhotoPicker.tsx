@@ -29,7 +29,7 @@ export function PendingPhotoPicker({
 
   return (
     <View>
-      <Text style={styles.label}>Photos (optional)</Text>
+      <Text style={styles.label}>Photos</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
         {assets.map((asset) => (
           <View key={asset.uri} style={styles.photoWrap}>

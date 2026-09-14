@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, spacing } from "../lib/theme";
 
@@ -14,13 +14,22 @@ export function Screen({
 }) {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      {scroll ? (
-        <ScrollView contentContainerStyle={[styles.grow, padded && styles.padded]}>
-          {children}
-        </ScrollView>
-      ) : (
-        <View style={[styles.flex, padded && styles.padded]}>{children}</View>
-      )}
+      {/* No screen was wrapping its inputs against the keyboard, so on iOS
+          (which never resizes the view on its own) the keyboard just
+          covered whatever field was focused. Android already resizes via
+          the app's default softInputMode, so this is a no-op there. */}
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        {scroll ? (
+          <ScrollView
+            contentContainerStyle={[styles.grow, padded && styles.padded]}
+            keyboardShouldPersistTaps="handled"
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={[styles.flex, padded && styles.padded]}>{children}</View>
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

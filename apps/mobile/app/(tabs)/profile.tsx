@@ -83,13 +83,13 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Change password</Text>
         </View>
         <PasswordField
-          label="New password"
+          label="New password *"
           value={newPassword}
           onChangeText={setNewPassword}
           error={fieldErrors.password}
         />
         <PasswordField
-          label="Confirm new password"
+          label="Confirm new password *"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           error={fieldErrors.confirmPassword}

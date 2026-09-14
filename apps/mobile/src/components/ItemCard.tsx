@@ -25,7 +25,7 @@ export function ItemCard({
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       {photoUrl ? (
-        <Image source={{ uri: photoUrl }} style={styles.thumb} contentFit="cover" transition={150} />
+        <Image source={{ uri: photoUrl }} style={styles.thumb} contentFit="contain" transition={150} />
       ) : (
         <View style={[styles.thumb, styles.thumbPlaceholder]}>
           <ImageOff size={20} color={colors.textFaint} strokeWidth={1.75} />

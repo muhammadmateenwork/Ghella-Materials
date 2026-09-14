@@ -71,7 +71,7 @@ export function ItemForm({
 
   return (
     <View>
-      <TextField label="Material name" value={name} onChangeText={setName} error={fieldErrors.name} />
+      <TextField label="Material name *" value={name} onChangeText={setName} error={fieldErrors.name} />
       <TextField
         label="Identification number"
         value={idNumber}
@@ -82,16 +82,16 @@ export function ItemForm({
       <View style={styles.row}>
         <View style={styles.rowField}>
           <TextField
-            label="Quantity"
+            label="Quantity *"
             value={quantity}
             onChangeText={setQuantity}
-            keyboardType="number-pad"
+            keyboardType="decimal-pad"
             error={fieldErrors.quantity}
           />
         </View>
         <View style={styles.rowField}>
           <TextField
-            label="Unit (optional)"
+            label="Unit"
             value={unit}
             onChangeText={setUnit}
             placeholder="bundles, rolls..."
@@ -123,14 +123,14 @@ export function ItemForm({
         error={fieldErrors.condition}
       />
       <LocationPickerField
-        label="Location"
+        label="Location *"
         locations={locations}
         value={locationId}
         onChange={setLocationId}
         error={fieldErrors.location_id}
       />
       <TextField
-        label="Notes / contact details (optional)"
+        label="Notes / contact details"
         value={notes}
         onChangeText={setNotes}
         multiline

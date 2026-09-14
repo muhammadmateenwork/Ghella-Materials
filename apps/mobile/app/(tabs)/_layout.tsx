@@ -2,12 +2,16 @@ import { useProfile, useSession } from "@ghella/shared";
 import { Redirect, Tabs } from "expo-router";
 import { LayoutGrid, Package, Shield, User } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackLoader } from "../../src/components/StackLoader";
+import { usePushNotifications } from "../../src/lib/pushNotifications";
 import { colors, fonts } from "../../src/lib/theme";
 
 export default function TabsLayout() {
   const { session, isLoading } = useSession();
   const { isMaxTier } = useProfile();
+  const insets = useSafeAreaInsets();
+  usePushNotifications();
 
   if (isLoading) {
     return (
@@ -27,7 +31,11 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textFaint,
-        tabBarStyle: styles.tabBar,
+        // Fixed padding/height ignored the device's bottom safe-area inset
+        // (home indicator / gesture nav bar), so the tab bar rendered too
+        // short and its bottom edge sat under the system nav area on most
+        // modern phones — this pads it out by the actual inset instead.
+        tabBarStyle: [styles.tabBar, { height: 54 + insets.bottom, paddingBottom: Math.max(insets.bottom, 8) }],
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -61,8 +69,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopColor: colors.border,
     borderTopWidth: 1,
-    height: 62,
-    paddingBottom: 8,
     paddingTop: 6,
   },
   tabLabel: { fontSize: 11, fontFamily: fonts.bodyBold },

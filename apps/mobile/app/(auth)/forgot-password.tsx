@@ -59,7 +59,7 @@ export default function ForgotPasswordScreen() {
           <Text style={styles.subtitle}>Enter your account email and we&apos;ll send you a reset link.</Text>
 
           <TextField
-            label="Email"
+            label="Email *"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"

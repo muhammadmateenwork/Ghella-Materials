@@ -64,7 +64,7 @@ export default function LoginScreen() {
         <Text style={styles.subtitle}>Enter the details your manager gave you.</Text>
 
         <TextField
-          label="Email"
+          label="Email *"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -72,7 +72,7 @@ export default function LoginScreen() {
           error={fieldErrors.email}
         />
         <PasswordField
-          label="Password"
+          label="Password *"
           value={password}
           onChangeText={setPassword}
           autoComplete="password"

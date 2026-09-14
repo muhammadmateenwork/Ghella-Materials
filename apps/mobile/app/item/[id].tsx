@@ -127,8 +127,8 @@ export default function ItemDetailScreen() {
               <Image
                 key={photo.id}
                 source={{ uri: getItemPhotoUrl(supabase, photo.storage_path) }}
-                style={{ width, height: width * 0.75 }}
-                contentFit="cover"
+                style={[{ width, height: width * 0.75 }, styles.photoBg]}
+                contentFit="contain"
                 transition={150}
               />
             ))}
@@ -191,14 +191,14 @@ export default function ItemDetailScreen() {
           <View>
             <Text style={styles.sectionTitle}>Reserve this material</Text>
             <TextField
-              label="Quantity needed"
+              label="Quantity needed *"
               value={quantity}
               onChangeText={setQuantity}
-              keyboardType="number-pad"
+              keyboardType="decimal-pad"
               error={fieldErrors.quantity}
             />
             <TextField
-              label="Contact info (name, phone, or email)"
+              label="Contact info (name, phone, or email) *"
               value={contactInfo}
               onChangeText={setContactInfo}
               error={fieldErrors.contact_info}
@@ -220,6 +220,7 @@ export default function ItemDetailScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  photoBg: { backgroundColor: colors.surfaceAlt },
   photoPlaceholder: {
     backgroundColor: colors.surfaceAlt,
     alignItems: "center",

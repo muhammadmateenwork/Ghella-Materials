@@ -116,9 +116,9 @@ export default function AdminLocationsScreen() {
     <Screen scroll>
       <Card style={styles.form}>
         <Text style={styles.sectionTitle}>Add a location</Text>
-        <TextField label="Name" value={name} onChangeText={setName} error={nameError} />
+        <TextField label="Name *" value={name} onChangeText={setName} error={nameError} />
         <LocationPickerField
-          label="Parent location (optional — pick 'No parent' for a top-level yard)"
+          label="Parent location (pick 'No parent' for a top-level yard)"
           locations={[NO_PARENT_OPTION, ...locations]}
           value={parentId ?? ""}
           onChange={(id) => setParentId(id === "" ? null : id)}
@@ -138,7 +138,7 @@ export default function AdminLocationsScreen() {
             if (editingId === item.id) {
               return (
                 <Card style={styles.editCard}>
-                  <TextField label="Name" value={editName} onChangeText={setEditName} error={editError} />
+                  <TextField label="Name *" value={editName} onChangeText={setEditName} error={editError} />
                   <LocationPickerField
                     label="Parent location"
                     locations={[NO_PARENT_OPTION, ...locations.filter((l) => !editExcludedIds.has(l.id))]}
