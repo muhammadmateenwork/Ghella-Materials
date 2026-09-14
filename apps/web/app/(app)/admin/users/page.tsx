@@ -240,7 +240,7 @@ function RoleOption({ label, selected, onClick }: { label: string; selected: boo
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-sm border py-2.5 text-sm font-semibold transition-colors ${
+      className={`min-w-0 flex-1 truncate rounded-sm border px-1 py-2.5 text-sm font-semibold transition-colors ${
         selected ? "border-primary bg-primary text-primary-text" : "border-border bg-surface text-text"
       }`}
     >

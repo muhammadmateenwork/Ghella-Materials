@@ -72,6 +72,12 @@
 
 html {
   scroll-behavior: smooth;
+  /* Belt-and-suspenders: nothing currently overflows the viewport width
+     (verified directly), but this guarantees the page can never gain a
+     horizontal scrollbar/cut-off content no matter what causes an
+     unexpectedly wide element in the future — the offending content gets
+     clipped instead of dragging the whole page wider than the screen. */
+  overflow-x: hidden;
 }
 
 body {
@@ -83,6 +89,8 @@ body {
   background-size: 32px 32px;
   background-position: -1px -1px;
   background-attachment: fixed;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 ::selection {
