@@ -1,24 +1,33 @@
 import { Eye, EyeOff } from "lucide-react-native";
-import { useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 import { colors, fonts, radius, spacing } from "../lib/theme";
+import { ScrollIntoViewContext } from "./Screen";
 
 export function PasswordField({
   label,
   error,
+  onFocus,
   ...inputProps
 }: Omit<TextInputProps, "secureTextEntry"> & { label: string; error?: string }) {
   const [visible, setVisible] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const registerFocusedField = useContext(ScrollIntoViewContext);
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputWrap}>
         <TextInput
+          ref={inputRef}
           style={[styles.input, error && styles.inputError]}
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           secureTextEntry={!visible}
+          onFocus={(e) => {
+            registerFocusedField?.(inputRef.current);
+            onFocus?.(e);
+          }}
           {...inputProps}
         />
         <Pressable

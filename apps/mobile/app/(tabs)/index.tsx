@@ -121,7 +121,7 @@ export default function BrowseScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
+  header: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.sm },
   title: { marginBottom: spacing.md },
   searchBar: {
     flexDirection: "row",

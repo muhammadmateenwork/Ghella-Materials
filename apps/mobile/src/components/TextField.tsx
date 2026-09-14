@@ -1,18 +1,29 @@
+import { useContext, useRef } from "react";
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 import { colors, fonts, radius, spacing } from "../lib/theme";
+import { ScrollIntoViewContext } from "./Screen";
 
 export function TextField({
   label,
   error,
+  onFocus,
   ...inputProps
 }: TextInputProps & { label: string; error?: string }) {
+  const inputRef = useRef<TextInput>(null);
+  const registerFocusedField = useContext(ScrollIntoViewContext);
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
+        ref={inputRef}
         style={[styles.input, error && styles.inputError]}
         placeholderTextColor={colors.textFaint}
         autoCapitalize="none"
+        onFocus={(e) => {
+          registerFocusedField?.(inputRef.current);
+          onFocus?.(e);
+        }}
         {...inputProps}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}

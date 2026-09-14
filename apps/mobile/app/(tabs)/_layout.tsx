@@ -11,6 +11,11 @@ export default function TabsLayout() {
   const { session, isLoading } = useSession();
   const { isMaxTier } = useProfile();
   const insets = useSafeAreaInsets();
+  // Some devices under-report (or briefly zero out) the bottom safe-area
+  // inset for the gesture/button nav bar, which let the tab bar render too
+  // short and sit under the system nav buttons. Floor it at a sane minimum
+  // so the tab bar always clears the nav bar even if the inset is wrong.
+  const bottomInset = Math.max(insets.bottom, 20);
   usePushNotifications();
 
   if (isLoading) {
@@ -35,7 +40,7 @@ export default function TabsLayout() {
         // (home indicator / gesture nav bar), so the tab bar rendered too
         // short and its bottom edge sat under the system nav area on most
         // modern phones — this pads it out by the actual inset instead.
-        tabBarStyle: [styles.tabBar, { height: 54 + insets.bottom, paddingBottom: Math.max(insets.bottom, 8) }],
+        tabBarStyle: [styles.tabBar, { height: 54 + bottomInset, paddingBottom: bottomInset }],
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
