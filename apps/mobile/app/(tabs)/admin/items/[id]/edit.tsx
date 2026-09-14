@@ -1,5 +1,6 @@
-import { getFriendlyErrorMessage, useDeleteItem, useItem, useUpdateItem } from "@ghella/shared";
+import { getFriendlyErrorMessage, useDeleteItem, useItem, useProfile, useUpdateItem } from "@ghella/shared";
 import { router, useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { Trash2 } from "lucide-react-native";
 import { Button } from "../../../../../src/components/Button";
@@ -15,11 +16,21 @@ import { spacing } from "../../../../../src/lib/theme";
 
 export default function EditItemScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { profile } = useProfile();
   const itemQuery = useItem(id);
   const updateItem = useUpdateItem(id);
   const deleteItem = useDeleteItem();
   const confirmDialog = useConfirm();
   const showToast = useToast();
+
+  // Only the item's own creator (or anyone, for legacy items added before
+  // ownership was tracked) can edit it — everyone else gets bounced to the
+  // regular read-only item view instead.
+  const item = itemQuery.data;
+  const canEdit = !item || item.created_by === null || item.created_by === profile?.id;
+  useEffect(() => {
+    if (item && !canEdit) router.replace(`/item/${id}`);
+  }, [item, canEdit, id]);
 
   const handleDelete = async () => {
     const confirmed = await confirmDialog({
@@ -46,7 +57,7 @@ export default function EditItemScreen() {
     );
   }
 
-  if (itemQuery.isLoading || !itemQuery.data) {
+  if (itemQuery.isLoading || !item || !canEdit) {
     return (
       <Screen>
         <View style={styles.center}>
@@ -55,8 +66,6 @@ export default function EditItemScreen() {
       </Screen>
     );
   }
-
-  const item = itemQuery.data;
 
   return (
     <Screen scroll>

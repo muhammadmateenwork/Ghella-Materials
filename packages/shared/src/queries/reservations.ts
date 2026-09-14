@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSupabaseClient } from "../supabase/context";
+import { useSession, useSupabaseClient } from "../supabase/context";
 import type { Reservation, ReservationWithDetails } from "../types/database";
 import { queryKeys } from "./keys";
 
@@ -8,19 +8,27 @@ const RESERVATION_WITH_DETAILS_SELECT =
 
 export const RESERVATIONS_PAGE_SIZE = 20;
 
+// Relies on an explicit user_id filter, not just RLS, because the RLS read
+// policy also lets maximum-tier users read every row (for the admin
+// Reservation Log) — without this filter, a maximum-tier user's "My
+// Reservations" would silently show everyone's reservations too.
 export function useMyReservations() {
   const supabase = useSupabaseClient();
+  const { session } = useSession();
+  const userId = session?.user.id;
 
   return useQuery({
-    queryKey: queryKeys.myReservations(),
+    queryKey: [...queryKeys.myReservations(), userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reservations")
         .select(RESERVATION_WITH_DETAILS_SELECT)
+        .eq("user_id", userId as string)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as unknown as ReservationWithDetails[];
     },
+    enabled: Boolean(userId),
   });
 }
 
@@ -42,17 +50,22 @@ export function useAllReservations() {
 }
 
 /** Paginated version of useMyReservations — a long personal history loads
- * a page at a time instead of the whole log. */
+ * a page at a time instead of the whole log. Same explicit user_id filter
+ * as useMyReservations, for the same reason (RLS alone would let
+ * maximum-tier users see everyone's reservations here too). */
 export function useMyReservationsInfinite() {
   const supabase = useSupabaseClient();
+  const { session } = useSession();
+  const userId = session?.user.id;
 
   return useInfiniteQuery({
-    queryKey: [...queryKeys.myReservations(), "infinite"],
+    queryKey: [...queryKeys.myReservations(), "infinite", userId],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const { data, error } = await supabase
         .from("reservations")
         .select(RESERVATION_WITH_DETAILS_SELECT)
+        .eq("user_id", userId as string)
         .order("created_at", { ascending: false })
         .range(pageParam, pageParam + RESERVATIONS_PAGE_SIZE - 1);
       if (error) throw error;
@@ -64,6 +77,7 @@ export function useMyReservationsInfinite() {
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextOffset,
+    enabled: Boolean(userId),
   });
 }
 

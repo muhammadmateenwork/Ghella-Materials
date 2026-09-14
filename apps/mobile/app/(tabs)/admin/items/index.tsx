@@ -1,4 +1,4 @@
-import { formatQuantity, getFriendlyErrorMessage, useDeleteItem, useItemsInfinite } from "@ghella/shared";
+import { formatQuantity, getFriendlyErrorMessage, useDeleteItem, useItemsInfinite, useProfile } from "@ghella/shared";
 import { router } from "expo-router";
 import { Package, Pencil, Plus, Trash2 } from "lucide-react-native";
 import { useMemo } from "react";
@@ -15,6 +15,7 @@ import { useToast } from "../../../../src/components/Toast";
 import { colors, spacing, typography } from "../../../../src/lib/theme";
 
 export default function AdminItemsScreen() {
+  const { profile } = useProfile();
   const itemsQuery = useItemsInfinite();
   const deleteItem = useDeleteItem();
   const confirmDialog = useConfirm();
@@ -73,42 +74,52 @@ export default function AdminItemsScreen() {
               </View>
             ) : null
           }
-          renderItem={({ item }) => (
-            <Card style={styles.row} onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}>
-              <View style={styles.rowContent}>
-                <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{item.name}</Text>
-                  <Text style={styles.rowMeta}>
-                    {item.location.name} · Qty {formatQuantity(item.quantity, item.unit, item.is_approximate)}
-                  </Text>
+          renderItem={({ item }) => {
+            // Items added before ownership was tracked (created_by null)
+            // stay editable by any maximum-tier user; otherwise only the
+            // person who added it can edit or delete it.
+            const canEdit = item.created_by === null || item.created_by === profile?.id;
+            return (
+              <Card style={styles.row} onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}>
+                <View style={styles.rowContent}>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowName}>{item.name}</Text>
+                    <Text style={styles.rowMeta}>
+                      {item.location.name} · Qty {formatQuantity(item.quantity, item.unit, item.is_approximate)}
+                    </Text>
+                  </View>
+                  {canEdit ? (
+                    <View style={styles.rowActions}>
+                      <Pressable
+                        onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}
+                        disabled={deleteItem.isPending && deleteItem.variables === item.id}
+                        hitSlop={8}
+                        style={styles.iconButton}
+                        accessibilityLabel={`Edit ${item.name}`}
+                      >
+                        <Pencil size={16} color={colors.textMuted} strokeWidth={2} />
+                      </Pressable>
+                      <Pressable
+                        onPress={() => handleDelete(item)}
+                        disabled={deleteItem.isPending && deleteItem.variables === item.id}
+                        hitSlop={8}
+                        style={styles.iconButton}
+                        accessibilityLabel={`Delete ${item.name}`}
+                      >
+                        {deleteItem.isPending && deleteItem.variables === item.id ? (
+                          <ActivityIndicator size="small" color={colors.danger} />
+                        ) : (
+                          <Trash2 size={16} color={colors.danger} strokeWidth={2} />
+                        )}
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <Text style={styles.rowOwner}>Added by another manager</Text>
+                  )}
                 </View>
-                <View style={styles.rowActions}>
-                  <Pressable
-                    onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}
-                    disabled={deleteItem.isPending && deleteItem.variables === item.id}
-                    hitSlop={8}
-                    style={styles.iconButton}
-                    accessibilityLabel={`Edit ${item.name}`}
-                  >
-                    <Pencil size={16} color={colors.textMuted} strokeWidth={2} />
-                  </Pressable>
-                  <Pressable
-                    onPress={() => handleDelete(item)}
-                    disabled={deleteItem.isPending && deleteItem.variables === item.id}
-                    hitSlop={8}
-                    style={styles.iconButton}
-                    accessibilityLabel={`Delete ${item.name}`}
-                  >
-                    {deleteItem.isPending && deleteItem.variables === item.id ? (
-                      <ActivityIndicator size="small" color={colors.danger} />
-                    ) : (
-                      <Trash2 size={16} color={colors.danger} strokeWidth={2} />
-                    )}
-                  </Pressable>
-                </View>
-              </View>
-            </Card>
-          )}
+              </Card>
+            );
+          }}
         />
       )}
     </Screen>
@@ -133,5 +144,6 @@ const styles = StyleSheet.create({
   rowName: { ...typography.subtitle, color: colors.text },
   rowMeta: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   rowActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  rowOwner: { ...typography.caption, color: colors.textFaint, fontStyle: "italic", flexShrink: 0 },
   iconButton: { width: 30, height: 30, alignItems: "center", justifyContent: "center" },
 });

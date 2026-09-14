@@ -1,8 +1,9 @@
 "use client";
 
-import { getFriendlyErrorMessage, useDeleteItem, useItem, useUpdateItem } from "@ghella/shared";
+import { getFriendlyErrorMessage, useDeleteItem, useItem, useProfile, useUpdateItem } from "@ghella/shared";
 import { Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Button } from "../../../../../components/Button";
 import { useConfirm } from "../../../../../components/ConfirmDialog";
 import { ErrorState } from "../../../../../components/ErrorState";
@@ -15,11 +16,21 @@ import { useToast } from "../../../../../components/Toast";
 export default function EditItemPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { profile } = useProfile();
   const itemQuery = useItem(id);
   const updateItem = useUpdateItem(id);
   const deleteItem = useDeleteItem();
   const confirmDialog = useConfirm();
   const showToast = useToast();
+
+  // Only the item's own creator (or anyone, for legacy items added before
+  // ownership was tracked) can edit it — everyone else lands on the
+  // regular read-only item view instead.
+  const item = itemQuery.data;
+  const canEdit = !item || item.created_by === null || item.created_by === profile?.id;
+  useEffect(() => {
+    if (item && !canEdit) router.replace(`/items/${id}`);
+  }, [item, canEdit, id, router]);
 
   const handleDelete = async () => {
     const confirmed = await confirmDialog({
@@ -39,15 +50,13 @@ export default function EditItemPage() {
     return <ErrorState message={itemQuery.error?.message} onRetry={() => itemQuery.refetch()} />;
   }
 
-  if (itemQuery.isLoading || !itemQuery.data) {
+  if (itemQuery.isLoading || !item || !canEdit) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <StackLoader />
       </div>
     );
   }
-
-  const item = itemQuery.data;
 
   return (
     <div className="mx-auto max-w-lg">
