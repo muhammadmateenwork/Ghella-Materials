@@ -6,6 +6,22 @@ import { queryKeys } from "./keys";
 
 const PHOTOS_BUCKET = "item-photos";
 
+// Browsers expose a global `crypto.randomUUID`, but React Native's Hermes
+// engine doesn't — this package is shared by both, so it can't assume the
+// browser global exists. Fall back to a Math.random()-based v4 UUID, which
+// is plenty for a storage-path suffix (it only needs to avoid collisions,
+// not resist an attacker).
+function generateUuid(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export function getItemPhotoUrl(supabase: GhellaSupabaseClient, storagePath: string): string {
   return supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(storagePath).data.publicUrl;
 }
@@ -26,7 +42,7 @@ export function useUploadItemPhoto() {
       fileExt: string;
       contentType: string;
     }) => {
-      const path = `${input.itemId}/${crypto.randomUUID()}.${input.fileExt}`;
+      const path = `${input.itemId}/${generateUuid()}.${input.fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from(PHOTOS_BUCKET)

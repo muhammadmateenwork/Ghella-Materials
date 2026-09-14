@@ -33,7 +33,7 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <Screen scroll>
+    <Screen scroll bottomSafeArea>
       <View style={styles.header}>
         <Logomark size={56} />
       </View>

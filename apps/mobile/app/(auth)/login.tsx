@@ -37,7 +37,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen scroll padded={false}>
+    <Screen scroll padded={false} bottomSafeArea>
       <View style={styles.hero}>
         <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
           <Defs>

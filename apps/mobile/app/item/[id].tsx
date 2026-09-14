@@ -121,7 +121,7 @@ export default function ItemDetailScreen() {
   };
 
   return (
-    <Screen scroll padded={false}>
+    <Screen scroll padded={false} bottomSafeArea>
       {item.item_photos.length > 0 ? (
         <View>
           <ScrollView

@@ -1,4 +1,4 @@
-import { createContext, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   findNodeHandle,
   Keyboard,
@@ -11,27 +11,35 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, spacing } from "../lib/theme";
 
-// Android's windowSoftInputMode "resize" (set in app.json) shrinks the
-// window when the keyboard opens, but that alone doesn't scroll a focused
-// field that ends up under the (now-closer) keyboard back into view — RN's
-// own auto-scroll-focused-input-into-view behavior is unreliable on the New
-// Architecture. Fields register themselves here on focus, and once the
-// keyboard has actually finished animating in (keyboardDidShow/WillShow —
-// fires regardless of resize mode) we measure and scroll them into view
-// ourselves.
+// Android's windowSoftInputMode "resize" (set in app.json) is unreliable
+// under mandatory edge-to-edge (Android 15+) and often doesn't actually
+// shrink the window, so a short form's ScrollView has no natural overflow
+// to scroll a bottom field into view with. We track the real keyboard
+// height ourselves and pad the scroll content by that much whenever it's
+// open, which guarantees there's always room to scroll any field —
+// including the very last one — above the keyboard. Fields register
+// themselves here on focus so we know what to scroll to.
 export const ScrollIntoViewContext = createContext<((node: unknown) => void) | null>(null);
 
 export function Screen({
   children,
   scroll = false,
   padded = true,
+  bottomSafeArea = false,
 }: {
   children: ReactNode;
   scroll?: boolean;
   padded?: boolean;
+  // Screens rendered without a tab bar beneath them (auth screens, item
+  // detail) get no bottom safe-area padding from anything else, so their
+  // last button can end up flush against the device's gesture bar/nav
+  // buttons. Tab-bar screens leave this off since the tab bar already
+  // reserves that space.
+  bottomSafeArea?: boolean;
 }) {
   const scrollRef = useRef<ScrollView>(null);
   const focusedNodeRef = useRef<unknown>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const scrollFieldIntoView = (node: unknown) => {
     const scrollHandle = findNodeHandle(scrollRef.current);
@@ -46,10 +54,16 @@ export function Screen({
   };
 
   useEffect(() => {
-    if (!scroll) return;
-    const event = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const sub = Keyboard.addListener(event, () => scrollFieldIntoView(focusedNodeRef.current));
-    return () => sub.remove();
+    if (!scroll || Platform.OS !== "android") return;
+    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      scrollFieldIntoView(focusedNodeRef.current);
+    });
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scroll]);
 
@@ -61,17 +75,24 @@ export function Screen({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={bottomSafeArea ? ["top", "left", "right", "bottom"] : ["top", "left", "right"]}
+    >
       {/* No screen was wrapping its inputs against the keyboard, so on iOS
           (which never resizes the view on its own) the keyboard just
-          covered whatever field was focused. Android already resizes via
-          the app's default softInputMode, so this is a no-op there. */}
+          covered whatever field was focused. Android gets its own
+          keyboardHeight padding below instead (see the effect above). */}
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {scroll ? (
           <ScrollIntoViewContext.Provider value={registerFocusedField}>
             <ScrollView
               ref={scrollRef}
-              contentContainerStyle={[styles.grow, padded && styles.padded]}
+              contentContainerStyle={[
+                styles.grow,
+                padded && styles.padded,
+                keyboardHeight > 0 && { paddingBottom: keyboardHeight + spacing.lg },
+              ]}
               keyboardShouldPersistTaps="handled"
             >
               {children}
