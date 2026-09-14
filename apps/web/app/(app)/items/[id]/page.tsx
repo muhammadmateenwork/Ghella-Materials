@@ -97,7 +97,7 @@ export default function ItemDetailPage() {
               <img
                 src={getItemPhotoUrl(supabase, photo.storage_path)}
                 alt={item.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-text-faint">
@@ -129,8 +129,10 @@ export default function ItemDetailPage() {
         </div>
 
         <div>
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <h1 className="font-display text-2xl font-black uppercase tracking-tight text-text">{item.name}</h1>
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <h1 className="min-w-0 font-display text-2xl font-black uppercase tracking-tight text-text">
+              {item.name}
+            </h1>
             <Badge
               label={`${formatQuantity(available, null, false)} of ${formatQuantity(item.quantity, item.unit, item.is_approximate)} available`}
               tone={available > 0 ? "success" : "danger"}
@@ -167,16 +169,17 @@ export default function ItemDetailPage() {
                 Reserve this material
               </h2>
               <TextField
-                label="Quantity needed"
+                label="Quantity needed *"
                 type="number"
-                min={1}
+                min={0.01}
                 max={available}
+                step="any"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 error={fieldErrors.quantity}
               />
               <TextField
-                label="Contact info (name, phone, or email)"
+                label="Contact info (name, phone, or email) *"
                 value={contactInfo}
                 onChange={(e) => setContactInfo(e.target.value)}
                 error={fieldErrors.contact_info}

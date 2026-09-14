@@ -70,7 +70,7 @@ export function ItemForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <TextField label="Material name" value={name} onChange={(e) => setName(e.target.value)} error={fieldErrors.name} />
+      <TextField label="Material name *" value={name} onChange={(e) => setName(e.target.value)} error={fieldErrors.name} />
       <TextField
         label="Identification number"
         value={idNumber}
@@ -80,15 +80,16 @@ export function ItemForm({
 
       <div className="grid grid-cols-2 gap-3">
         <TextField
-          label="Quantity"
+          label="Quantity *"
           type="number"
           min={0}
+          step="any"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           error={fieldErrors.quantity}
         />
         <TextField
-          label="Unit (optional)"
+          label="Unit"
           placeholder="e.g. bundles, rolls, bags"
           value={unit}
           onChange={(e) => setUnit(e.target.value)}
@@ -117,14 +118,14 @@ export function ItemForm({
         error={fieldErrors.condition}
       />
       <LocationTreePicker
-        label="Location"
+        label="Location *"
         locations={locations}
         value={locationId}
         onChange={setLocationId}
         error={fieldErrors.location_id}
       />
       <TextAreaField
-        label="Notes / contact details (optional)"
+        label="Notes / contact details"
         rows={3}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}

@@ -21,15 +21,16 @@ export function ItemCard({ item, locations }: { item: ItemWithDetails; locations
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") router.push(`/items/${item.id}`);
       }}
-      className="group flex cursor-pointer flex-col overflow-hidden rounded-sm border border-border bg-surface transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(20,33,61,0.12)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_10px_28px_rgba(20,33,61,0.12)]"
+      className="group flex cursor-pointer flex-row items-stretch gap-3 rounded-sm border border-border bg-surface p-3 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(20,33,61,0.12)] focus-visible:-translate-y-0.5 focus-visible:shadow-[0_10px_28px_rgba(20,33,61,0.12)] sm:flex-col sm:gap-0 sm:overflow-hidden sm:p-0"
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-alt">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-sm bg-surface-alt sm:h-auto sm:w-full sm:aspect-[4/3] sm:shrink sm:rounded-none">
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={photoUrl}
             alt={item.name}
-            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+            draggable={false}
+            className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
@@ -37,7 +38,7 @@ export function ItemCard({ item, locations }: { item: ItemWithDetails; locations
           </div>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-4">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 sm:justify-start sm:gap-1.5 sm:p-4">
         <p className="truncate font-semibold text-text">{item.name}</p>
         {item.identification_number ? (
           <p className="truncate text-xs text-text-muted">ID: {item.identification_number}</p>

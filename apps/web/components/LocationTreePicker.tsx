@@ -90,7 +90,7 @@ export function LocationTreePicker({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search locations"
-                className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-faint"
+                className="flex-1 bg-transparent text-base text-text outline-none placeholder:text-text-faint"
               />
               {search ? (
                 <button type="button" onClick={() => setSearch("")} className="text-text-faint hover:text-text">

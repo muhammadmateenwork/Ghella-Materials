@@ -1,22 +1,13 @@
 "use client";
 
 import { useProfile, useSession, useSignOut } from "@ghella/shared";
-import {
-  ClipboardList,
-  LogOut,
-  LayoutGrid,
-  MapPinned,
-  Package,
-  Shield,
-  User,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { ClipboardList, LogOut, LayoutGrid, MapPinned, Package, Shield, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useConfirm } from "../../components/ConfirmDialog";
 import { Logomark } from "../../components/Logomark";
+import { MobileTabBar } from "../../components/MobileTabBar";
 import { StackLoader } from "../../components/StackLoader";
 
 const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
@@ -58,8 +49,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </main>
     );
   }
-
-  const allLinks = isMaxTier ? [...NAV_LINKS, ...ADMIN_LINKS] : NAV_LINKS;
 
   return (
     <div className="flex min-h-screen flex-1 bg-background">
@@ -110,39 +99,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col md:ml-64">
-        <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 md:hidden">
-          <div className="flex items-center gap-2">
-            <Logomark size={30} />
-            <span className="font-display font-semibold tracking-tight text-text">Ghella Materials</span>
-          </div>
-          <Link href="/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-alt">
-            <User size={16} className="text-text-muted" />
-          </Link>
-        </header>
-
-        <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-surface px-3 py-2 md:hidden">
-          {allLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex shrink-0 items-center gap-1.5 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors ${
-                pathname.startsWith(link.href)
-                  ? "bg-primary-soft text-primary-dark"
-                  : "text-text-muted hover:bg-surface-alt"
-              }`}
-            >
-              <link.icon size={14} />
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <main className="flex-1 p-4 md:p-8">
+        <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8">
           <div key={pathname} className="page-transition mx-auto w-full max-w-5xl">
             {children}
           </div>
         </main>
       </div>
+
+      <MobileTabBar isMaxTier={isMaxTier} />
     </div>
   );
 }

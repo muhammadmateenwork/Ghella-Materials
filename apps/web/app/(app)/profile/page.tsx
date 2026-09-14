@@ -81,14 +81,14 @@ export default function ProfilePage() {
         </p>
         <form onSubmit={handleChangePassword}>
           <PasswordField
-            label="New password"
+            label="New password *"
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             error={fieldErrors.password}
           />
           <PasswordField
-            label="Confirm new password"
+            label="Confirm new password *"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}

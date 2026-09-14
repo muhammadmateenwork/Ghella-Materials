@@ -32,7 +32,7 @@ export function PendingPhotoPicker({
 
   return (
     <div className="mb-5">
-      <p className="mb-2 text-sm font-bold text-text">Photos (optional)</p>
+      <p className="mb-2 text-sm font-bold text-text">Photos</p>
       <div className="flex flex-wrap gap-3">
         {files.map((file, index) => (
           <div key={`${file.name}-${index}`} className="relative h-24 w-24 overflow-hidden rounded-sm border border-border bg-surface-alt">

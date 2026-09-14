@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleSubmit}>
               <TextField
-                label="Email"
+                label="Email *"
                 type="email"
                 autoComplete="email"
                 value={email}

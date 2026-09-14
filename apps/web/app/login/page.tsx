@@ -128,7 +128,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit}>
             <TextField
-              label="Email"
+              label="Email *"
               type="email"
               autoComplete="email"
               value={email}
@@ -136,7 +136,7 @@ export default function LoginPage() {
               error={fieldErrors.email}
             />
             <PasswordField
-              label="Password"
+              label="Password *"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

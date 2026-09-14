@@ -74,7 +74,7 @@ export default function BrowsePage() {
       <div className="mb-4 flex items-center gap-2 rounded-sm border border-border bg-surface px-3.5 py-2.5">
         <Search size={17} className="text-text-faint" strokeWidth={2} />
         <input
-          className="flex-1 bg-transparent text-[15px] text-text outline-none placeholder:text-text-faint"
+          className="flex-1 bg-transparent text-base text-text outline-none placeholder:text-text-faint"
           placeholder="Search by name or ID number"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

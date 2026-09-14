@@ -119,9 +119,9 @@ export default function AdminLocationsPage() {
       <Card className="mb-6">
         <p className="mb-4 text-sm font-bold text-text">Add a location</p>
         <form onSubmit={handleAdd}>
-          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} error={nameError} />
+          <TextField label="Name *" value={name} onChange={(e) => setName(e.target.value)} error={nameError} />
           <SelectField
-            label="Parent location (optional — leave as 'No parent' for a top-level yard)"
+            label="Parent location (leave as 'No parent' for a top-level yard)"
             value={parentId}
             onChange={(e) => setParentId(e.target.value)}
           >
@@ -155,7 +155,7 @@ export default function AdminLocationsPage() {
               return (
                 <Card key={location.id}>
                   <TextField
-                    label="Name"
+                    label="Name *"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     error={editError}
