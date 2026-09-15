@@ -1,8 +1,9 @@
 "use client";
 
 import { formatQuantity, getFriendlyErrorMessage, useCancelReservation, useItemReservations } from "@ghella/shared";
-import { Mail, User } from "lucide-react";
+import { ClipboardList, Mail, User } from "lucide-react";
 import { useConfirm } from "./ConfirmDialog";
+import { EmptyState } from "./EmptyState";
 import { StackLoader } from "./StackLoader";
 import { useToast } from "./Toast";
 
@@ -10,10 +11,15 @@ export function ItemReservationsList({
   itemId,
   unit,
   isApproximate,
+  showEmptyState = false,
 }: {
   itemId: string;
   unit: string | null;
   isApproximate: boolean;
+  // Inline (edit-material page) just shows nothing when there's nothing to
+  // show. The dedicated reservations page passes this so an empty list
+  // still reads as "loaded, nothing here" rather than a blank page.
+  showEmptyState?: boolean;
 }) {
   const reservationsQuery = useItemReservations(itemId);
   const cancelReservation = useCancelReservation();
@@ -43,7 +49,16 @@ export function ItemReservationsList({
     );
   }
 
-  if (reservations.length === 0) return null;
+  if (reservations.length === 0) {
+    if (!showEmptyState) return null;
+    return (
+      <EmptyState
+        icon={ClipboardList}
+        title="No reservations yet"
+        subtitle="Nobody has reserved this material."
+      />
+    );
+  }
 
   return (
     <div className="mb-6">

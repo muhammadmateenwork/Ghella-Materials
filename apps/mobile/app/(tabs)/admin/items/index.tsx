@@ -1,6 +1,6 @@
 import { formatQuantity, getFriendlyErrorMessage, useDeleteItem, useItemsInfinite, useProfile } from "@ghella/shared";
 import { router } from "expo-router";
-import { Package, Pencil, Plus, Trash2 } from "lucide-react-native";
+import { ClipboardList, Package, Pencil, Plus, Trash2 } from "lucide-react-native";
 import { useMemo } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../../../src/components/Button";
@@ -84,6 +84,15 @@ export default function AdminItemsScreen() {
                   </Text>
                 </View>
                 <View style={styles.rowActions}>
+                  <Pressable
+                    onPress={() => router.push(`/(tabs)/admin/items/${item.id}/reservations`)}
+                    disabled={deleteItem.isPending && deleteItem.variables === item.id}
+                    hitSlop={8}
+                    style={styles.iconButton}
+                    accessibilityLabel={`Reservations for ${item.name}`}
+                  >
+                    <ClipboardList size={16} color={colors.textMuted} strokeWidth={2} />
+                  </Pressable>
                   <Pressable
                     onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}
                     disabled={deleteItem.isPending && deleteItem.variables === item.id}

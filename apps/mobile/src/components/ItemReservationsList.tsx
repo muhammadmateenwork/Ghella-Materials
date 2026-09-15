@@ -1,8 +1,9 @@
 import { formatQuantity, getFriendlyErrorMessage, useCancelReservation, useItemReservations } from "@ghella/shared";
-import { Mail, User } from "lucide-react-native";
+import { ClipboardList, Mail, User } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Card } from "./Card";
 import { useConfirm } from "./ConfirmDialog";
+import { EmptyState } from "./EmptyState";
 import { StackLoader } from "./StackLoader";
 import { useToast } from "./Toast";
 import { colors, spacing, typography } from "../lib/theme";
@@ -11,10 +12,15 @@ export function ItemReservationsList({
   itemId,
   unit,
   isApproximate,
+  showEmptyState = false,
 }: {
   itemId: string;
   unit: string | null;
   isApproximate: boolean;
+  // Inline (edit-material screen) just shows nothing when there's nothing
+  // to show. The dedicated reservations screen passes this so an empty
+  // list still reads as "loaded, nothing here" rather than a blank screen.
+  showEmptyState?: boolean;
 }) {
   const reservationsQuery = useItemReservations(itemId);
   const cancelReservation = useCancelReservation();
@@ -40,7 +46,12 @@ export function ItemReservationsList({
     return <StackLoader size="sm" style={styles.loading} />;
   }
 
-  if (reservations.length === 0) return null;
+  if (reservations.length === 0) {
+    if (!showEmptyState) return null;
+    return (
+      <EmptyState icon={ClipboardList} title="No reservations yet" subtitle="Nobody has reserved this material." />
+    );
+  }
 
   return (
     <View style={styles.section}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { formatQuantity, getFriendlyErrorMessage, useDeleteItem, useItemsInfinite, useProfile } from "@ghella/shared";
-import { Loader2, Package, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClipboardList, Loader2, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -80,6 +80,18 @@ export default function AdminItemsPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/admin/items/${item.id}/reservations`);
+                    }}
+                    disabled={deleteItem.isPending && deleteItem.variables === item.id}
+                    aria-label={`Reservations for ${item.name}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-sm text-text-faint transition-colors hover:bg-surface-alt hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ClipboardList size={15} strokeWidth={2} />
+                  </button>
                   <button
                     type="button"
                     onClick={(e) => {

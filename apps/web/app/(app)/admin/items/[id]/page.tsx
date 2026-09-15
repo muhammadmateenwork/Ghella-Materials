@@ -9,7 +9,6 @@ import { useConfirm } from "../../../../../components/ConfirmDialog";
 import { ErrorState } from "../../../../../components/ErrorState";
 import { ItemForm } from "../../../../../components/ItemForm";
 import { ItemPhotoManager } from "../../../../../components/ItemPhotoManager";
-import { ItemReservationsList } from "../../../../../components/ItemReservationsList";
 import { PageTitle } from "../../../../../components/PageTitle";
 import { StackLoader } from "../../../../../components/StackLoader";
 import { useToast } from "../../../../../components/Toast";
@@ -64,8 +63,6 @@ export default function EditItemPage() {
       <PageTitle>Edit material</PageTitle>
 
       <ItemPhotoManager itemId={item.id} photos={item.item_photos} />
-
-      <ItemReservationsList itemId={item.id} unit={item.unit} isApproximate={item.is_approximate} />
 
       <ItemForm
         initialValues={item}
