@@ -8,6 +8,7 @@ import { colors, spacing, typography } from "../lib/theme";
 
 export function ItemForm({
   initialValues,
+  reservedQuantity = 0,
   submitLabel,
   isSubmitting,
   onSubmit,
@@ -18,6 +19,9 @@ export function ItemForm({
       "name" | "identification_number" | "quantity" | "unit" | "is_approximate" | "condition" | "location_id" | "notes"
     >
   >;
+  // Total currently actively reserved against this item — the quantity
+  // field can't be saved below this (see itemFormSchema). 0 for a new item.
+  reservedQuantity?: number;
   submitLabel: string;
   isSubmitting: boolean;
   onSubmit: (values: {
@@ -47,7 +51,7 @@ export function ItemForm({
 
   const handleSubmit = () => {
     setFormError(null);
-    const result = itemFormSchema.safeParse({
+    const result = itemFormSchema(reservedQuantity).safeParse({
       name,
       identification_number: idNumber,
       quantity,
@@ -99,6 +103,11 @@ export function ItemForm({
           />
         </View>
       </View>
+      {reservedQuantity > 0 ? (
+        <Text style={styles.reservedHint}>
+          {reservedQuantity} already reserved — quantity can&apos;t go below that.
+        </Text>
+      ) : null}
 
       <View style={styles.approxRow}>
         <View style={styles.approxText}>
@@ -157,5 +166,6 @@ const styles = StyleSheet.create({
   approxText: { flex: 1 },
   approxLabel: { ...typography.bodyStrong, fontSize: 14, color: colors.text },
   approxHint: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  reservedHint: { ...typography.caption, color: colors.textMuted, marginTop: -8, marginBottom: spacing.md },
   formError: { color: colors.danger, marginBottom: spacing.md },
 });

@@ -12,11 +12,13 @@ import {
 } from "@ghella/shared";
 import { Image } from "expo-image";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import { ImageOff, PackageCheck, Tag } from "lucide-react-native";
+import { ImageOff, Mail, PackageCheck, Tag, User } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
+  Linking,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -192,6 +194,24 @@ export default function ItemDetailScreen() {
 
         {item.notes ? <Text style={styles.notes}>{item.notes}</Text> : null}
 
+        {item.creator ? (
+          <View style={styles.creatorCard}>
+            <Text style={styles.creatorLabel}>Added by</Text>
+            <View style={styles.metaRow}>
+              <User size={14} color={colors.textFaint} strokeWidth={2} />
+              <Text style={styles.creatorName}>{item.creator.name}</Text>
+            </View>
+            <Pressable
+              onPress={() => Linking.openURL(`mailto:${item.creator!.email}`)}
+              style={styles.metaRow}
+              hitSlop={6}
+            >
+              <Mail size={14} color={colors.textFaint} strokeWidth={2} />
+              <Text style={styles.creatorEmail}>{item.creator.email}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         <View style={styles.divider} />
 
         {available > 0 ? (
@@ -205,12 +225,14 @@ export default function ItemDetailScreen() {
               error={fieldErrors.quantity}
             />
             <TextField
-              label="Contact info (name, phone, or email) *"
+              label="Contact info (name, phone, email — anything that helps) *"
               value={contactInfo}
               onChangeText={(text) => {
                 setContactInfoTouched(true);
                 setContactInfo(text);
               }}
+              multiline
+              numberOfLines={3}
               error={fieldErrors.contact_info}
             />
             {formError ? <Text style={styles.formError}>{formError}</Text> : null}
@@ -261,6 +283,16 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs + 2 },
   metaText: { ...typography.body, color: colors.textMuted },
   notes: { ...typography.body, color: colors.text, marginTop: spacing.sm, lineHeight: 21 },
+  creatorCard: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.sm,
+    padding: spacing.sm + 4,
+    marginTop: spacing.md,
+    gap: 4,
+  },
+  creatorLabel: { ...typography.caption, color: colors.textFaint, marginBottom: 2 },
+  creatorName: { ...typography.bodyStrong, fontSize: 14, color: colors.text },
+  creatorEmail: { ...typography.body, fontSize: 13, color: colors.primary },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.lg },
   sectionTitle: { ...typography.title, color: colors.text, marginBottom: spacing.md },
   formError: { color: colors.danger, fontFamily: fonts.bodySemiBold, marginBottom: spacing.md },

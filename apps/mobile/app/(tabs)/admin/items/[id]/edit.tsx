@@ -8,6 +8,7 @@ import { useConfirm } from "../../../../../src/components/ConfirmDialog";
 import { ErrorState } from "../../../../../src/components/ErrorState";
 import { ItemForm } from "../../../../../src/components/ItemForm";
 import { ItemPhotoManager } from "../../../../../src/components/ItemPhotoManager";
+import { ItemReservationsList } from "../../../../../src/components/ItemReservationsList";
 import { PageHeading } from "../../../../../src/components/PageHeading";
 import { Screen } from "../../../../../src/components/Screen";
 import { StackLoader } from "../../../../../src/components/StackLoader";
@@ -73,8 +74,11 @@ export default function EditItemScreen() {
 
       <ItemPhotoManager itemId={item.id} photos={item.item_photos} />
 
+      <ItemReservationsList itemId={item.id} unit={item.unit} isApproximate={item.is_approximate} />
+
       <ItemForm
         initialValues={item}
+        reservedQuantity={item.availability.reserved_quantity}
         submitLabel="Save changes"
         isSubmitting={updateItem.isPending}
         onSubmit={(values) =>

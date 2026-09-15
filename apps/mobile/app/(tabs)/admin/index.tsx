@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { ChevronRight, ClipboardList, MapPinned, Package, Users, type LucideIcon } from "lucide-react-native";
+import { ChevronRight, MapPinned, Package, Users, type LucideIcon } from "lucide-react-native";
 import { StyleSheet, Text, View } from "react-native";
 import { Card } from "../../../src/components/Card";
 import { Screen } from "../../../src/components/Screen";
@@ -9,7 +9,6 @@ const LINKS: { href: string; title: string; subtitle: string; icon: LucideIcon }
   { href: "/(tabs)/admin/items", title: "Manage Materials", subtitle: "Add, edit, or remove items and photos", icon: Package },
   { href: "/(tabs)/admin/locations", title: "Manage Locations", subtitle: "Add yards and sub-locations", icon: MapPinned },
   { href: "/(tabs)/admin/users", title: "Manage Users", subtitle: "View accounts, change access level", icon: Users },
-  { href: "/(tabs)/admin/reservations", title: "Reservation Log", subtitle: "See every reservation across all staff", icon: ClipboardList },
 ];
 
 export default function AdminHubScreen() {

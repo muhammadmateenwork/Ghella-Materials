@@ -16,7 +16,7 @@ import { Badge } from "../../../src/components/Badge";
 import { Button } from "../../../src/components/Button";
 import { Card } from "../../../src/components/Card";
 import { useConfirm } from "../../../src/components/ConfirmDialog";
-import { Screen } from "../../../src/components/Screen";
+import { Screen, useKeyboardHeight } from "../../../src/components/Screen";
 import { StackLoader } from "../../../src/components/StackLoader";
 import { TextField } from "../../../src/components/TextField";
 import { ThemedRefreshControl } from "../../../src/components/ThemedRefreshControl";
@@ -32,6 +32,10 @@ export default function AdminUsersScreen() {
   const deleteUser = useDeleteUser();
   const confirmDialog = useConfirm();
   const showToast = useToast();
+  // This screen's form lives in a FlatList header, not Screen's own
+  // ScrollView, so it doesn't get Screen's built-in keyboard padding —
+  // added directly to the list's contentContainerStyle below instead.
+  const keyboardHeight = useKeyboardHeight();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -106,7 +110,8 @@ export default function AdminUsersScreen() {
       <FlatList
         data={users}
         keyExtractor={(user) => user.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, keyboardHeight > 0 && { paddingBottom: keyboardHeight + spacing.lg }]}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<ThemedRefreshControl refreshing={usersQuery.isFetching} onRefresh={() => usersQuery.refetch()} />}
         ListHeaderComponent={
           <View style={styles.form}>
@@ -185,7 +190,7 @@ export default function AdminUsersScreen() {
                 </View>
               </View>
               {isSelf ? (
-                <Text style={styles.selfNote}>This is you — ask another manager to change it</Text>
+                <Text style={styles.selfNote}>This is you — you can't change your own access level</Text>
               ) : (
                 <View style={styles.rowActions}>
                   <Button

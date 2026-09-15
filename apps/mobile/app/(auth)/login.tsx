@@ -61,7 +61,7 @@ export default function LoginScreen() {
           <View style={styles.titleBar} />
           <Text style={styles.title}>Sign in</Text>
         </View>
-        <Text style={styles.subtitle}>Enter the details your manager gave you.</Text>
+        <Text style={styles.subtitle}>Enter the details you were given to sign in.</Text>
 
         <TextField
           label="Email *"
@@ -88,7 +88,7 @@ export default function LoginScreen() {
         <Button title="Sign in" onPress={handleSubmit} loading={signIn.isPending} />
 
         <Text style={styles.footerNote}>
-          Accounts are created by a manager. Contact your site lead if you don&apos;t have one yet.
+          Accounts are set up for you in advance — there&apos;s no sign-up here.
         </Text>
       </View>
     </Screen>

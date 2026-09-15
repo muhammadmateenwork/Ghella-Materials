@@ -21,6 +21,28 @@ import { colors, spacing } from "../lib/theme";
 // themselves here on focus so we know what to scroll to.
 export const ScrollIntoViewContext = createContext<((node: unknown) => void) | null>(null);
 
+/** Live Android keyboard height (0 when closed) — for screens that manage
+ * their own scrollable container (a FlatList, typically) instead of using
+ * Screen's built-in `scroll` mode, so they can pad their own
+ * contentContainerStyle the same way Screen does internally. No-op / always
+ * 0 on iOS, which doesn't need it (see the KeyboardAvoidingView comment
+ * below). */
+export function useKeyboardHeight(): number {
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    const showSub = Keyboard.addListener("keyboardDidShow", (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  return keyboardHeight;
+}
+
 export function Screen({
   children,
   scroll = false,
@@ -39,7 +61,7 @@ export function Screen({
 }) {
   const scrollRef = useRef<ScrollView>(null);
   const focusedNodeRef = useRef<unknown>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardHeight = useKeyboardHeight();
 
   const scrollFieldIntoView = (node: unknown) => {
     const scrollHandle = findNodeHandle(scrollRef.current);
@@ -54,18 +76,9 @@ export function Screen({
   };
 
   useEffect(() => {
-    if (!scroll || Platform.OS !== "android") return;
-    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-      scrollFieldIntoView(focusedNodeRef.current);
-    });
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
+    if (keyboardHeight > 0) scrollFieldIntoView(focusedNodeRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scroll]);
+  }, [keyboardHeight]);
 
   const registerFocusedField = (node: unknown) => {
     focusedNodeRef.current = node;

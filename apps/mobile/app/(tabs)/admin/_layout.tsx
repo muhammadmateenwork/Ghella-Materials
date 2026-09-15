@@ -38,7 +38,6 @@ export default function AdminLayout() {
       <Stack.Screen name="items/[id]/edit" options={{ title: "Edit material" }} />
       <Stack.Screen name="locations" options={{ title: "Locations" }} />
       <Stack.Screen name="users" options={{ title: "Users" }} />
-      <Stack.Screen name="reservations" options={{ title: "Reservation Log" }} />
     </Stack>
   );
 }
