@@ -19,17 +19,24 @@
 -- Future item inserts automatically record who created them.
 alter table public.items alter column created_by set default auth.uid();
 
+-- Each policy drops both its old (pre-migration) name and its own new name
+-- before creating it, so this migration can be safely re-run (e.g. after a
+-- partial failure elsewhere in the same script) without a "policy already
+-- exists" error on a second attempt.
 drop policy if exists "items: max tier update" on public.items;
+drop policy if exists "items: max tier update own" on public.items;
 create policy "items: max tier update own" on public.items
   for update
   using (public.is_max_tier() and (created_by = auth.uid() or created_by is null));
 
 drop policy if exists "items: max tier delete" on public.items;
+drop policy if exists "items: max tier delete own" on public.items;
 create policy "items: max tier delete own" on public.items
   for delete
   using (public.is_max_tier() and (created_by = auth.uid() or created_by is null));
 
 drop policy if exists "item_photos: max tier insert" on public.item_photos;
+drop policy if exists "item_photos: max tier insert own item" on public.item_photos;
 create policy "item_photos: max tier insert own item" on public.item_photos
   for insert
   with check (
@@ -42,6 +49,7 @@ create policy "item_photos: max tier insert own item" on public.item_photos
   );
 
 drop policy if exists "item_photos: max tier delete" on public.item_photos;
+drop policy if exists "item_photos: max tier delete own item" on public.item_photos;
 create policy "item_photos: max tier delete own item" on public.item_photos
   for delete
   using (

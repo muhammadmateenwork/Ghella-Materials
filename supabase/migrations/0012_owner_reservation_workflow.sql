@@ -61,6 +61,7 @@ end;
 $$;
 
 drop policy if exists "reservations: max tier reads all" on public.reservations;
+drop policy if exists "reservations: item owner reads item's reservations" on public.reservations;
 
 create policy "reservations: item owner reads item's reservations" on public.reservations
   for select
@@ -81,7 +82,7 @@ create policy "reservations: item owner reads item's reservations" on public.res
 -- reservation regardless of the calling user's own RLS visibility — this is
 -- a data-integrity floor, not a read permission, so it must never
 -- under-count and let a decrease through that shouldn't be allowed.
-create function public.items_enforce_quantity_floor()
+create or replace function public.items_enforce_quantity_floor()
 returns trigger
 language plpgsql
 security definer
@@ -103,6 +104,7 @@ begin
 end;
 $$;
 
+drop trigger if exists items_check_quantity_floor on public.items;
 create trigger items_check_quantity_floor
   before update on public.items
   for each row execute function public.items_enforce_quantity_floor();
@@ -111,7 +113,7 @@ create trigger items_check_quantity_floor
 -- 4. Notification outbox
 -- ===========================================================================
 
-create table public.notification_outbox (
+create table if not exists public.notification_outbox (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   push_title text not null,
@@ -126,7 +128,8 @@ create table public.notification_outbox (
   sent_at timestamptz
 );
 
-create index notification_outbox_unsent_idx on public.notification_outbox (created_at) where sent_at is null;
+create index if not exists notification_outbox_unsent_idx
+  on public.notification_outbox (created_at) where sent_at is null;
 
 alter table public.notification_outbox enable row level security;
 -- No public policies: rows are written only by the security-definer trigger
@@ -135,7 +138,7 @@ alter table public.notification_outbox enable row level security;
 -- directly over the API in either direction.
 
 -- Item owner is notified (push only) when someone reserves their material.
-create function public.notify_owner_of_reservation()
+create or replace function public.notify_owner_of_reservation()
 returns trigger
 language plpgsql
 security definer
@@ -164,6 +167,7 @@ begin
 end;
 $$;
 
+drop trigger if exists reservations_notify_owner on public.reservations;
 create trigger reservations_notify_owner
   after insert on public.reservations
   for each row execute function public.notify_owner_of_reservation();
@@ -175,7 +179,7 @@ create trigger reservations_notify_owner
 -- lets this branch execute for the reservation's own maker or the item's
 -- owner, so "cancelled by someone other than the reservation's own user"
 -- unambiguously means the owner did it.
-create function public.notify_reserver_of_owner_cancel()
+create or replace function public.notify_reserver_of_owner_cancel()
 returns trigger
 language plpgsql
 security definer
@@ -212,6 +216,7 @@ begin
 end;
 $$;
 
+drop trigger if exists reservations_notify_on_owner_cancel on public.reservations;
 create trigger reservations_notify_on_owner_cancel
   after update on public.reservations
   for each row execute function public.notify_reserver_of_owner_cancel();
@@ -222,7 +227,7 @@ create trigger reservations_notify_on_owner_cancel
 -- that no longer exists. Runs BEFORE delete: reservations.item_id becomes
 -- null once the delete's ON DELETE SET NULL fires, so the reservations for
 -- this item can only be found by item_id up until this point.
-create function public.notify_reservers_of_item_delete()
+create or replace function public.notify_reservers_of_item_delete()
 returns trigger
 language plpgsql
 security definer
@@ -261,6 +266,7 @@ begin
 end;
 $$;
 
+drop trigger if exists items_notify_reservers_on_delete on public.items;
 create trigger items_notify_reservers_on_delete
   before delete on public.items
   for each row execute function public.notify_reservers_of_item_delete();
