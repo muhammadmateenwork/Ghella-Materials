@@ -11,16 +11,16 @@ import {
   useReserveItem,
   useSupabaseClient,
 } from "@ghella/shared";
-import { ImageOff, PackageCheck, Tag } from "lucide-react";
+import { ImageOff, Mail, PackageCheck, Tag, User } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "../../../../components/Badge";
 import { Button } from "../../../../components/Button";
 import { ErrorState } from "../../../../components/ErrorState";
 import { LocationBreadcrumb } from "../../../../components/LocationBreadcrumb";
 import { StackLoader } from "../../../../components/StackLoader";
 import { useSuccessOverlay } from "../../../../components/SuccessOverlay";
-import { TextField } from "../../../../components/TextField";
+import { TextAreaField, TextField } from "../../../../components/TextField";
 
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,9 +34,16 @@ export default function ItemDetailPage() {
 
   const [activePhoto, setActivePhoto] = useState(0);
   const [quantity, setQuantity] = useState("1");
-  const [contactInfo, setContactInfo] = useState(profile?.email ?? "");
+  const [contactInfo, setContactInfo] = useState("");
+  const [contactInfoTouched, setContactInfoTouched] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!contactInfoTouched && profile?.email) {
+      setContactInfo(profile.email);
+    }
+  }, [contactInfoTouched, profile?.email]);
 
   if (itemQuery.isError) {
     return <ErrorState message={itemQuery.error?.message} onRetry={() => itemQuery.refetch()} />;
@@ -160,6 +167,25 @@ export default function ItemDetailPage() {
 
           {item.notes ? <p className="mb-4 text-[15px] leading-relaxed text-text">{item.notes}</p> : null}
 
+          {item.creator ? (
+            <div className="mb-4 rounded-sm border border-border bg-surface-alt p-3">
+              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-text-faint">
+                Added by
+              </p>
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-text">
+                <User size={14} className="shrink-0 text-text-faint" strokeWidth={2} />
+                {item.creator.name}
+              </p>
+              <a
+                href={`mailto:${item.creator.email}`}
+                className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+              >
+                <Mail size={14} className="shrink-0 text-text-faint" strokeWidth={2} />
+                {item.creator.email}
+              </a>
+            </div>
+          ) : null}
+
           <div className="my-6 h-px bg-border" />
 
           {available > 0 ? (
@@ -178,10 +204,14 @@ export default function ItemDetailPage() {
                 onChange={(e) => setQuantity(e.target.value)}
                 error={fieldErrors.quantity}
               />
-              <TextField
-                label="Contact info (name, phone, or email) *"
+              <TextAreaField
+                label="Contact info (name, phone, email — anything that helps) *"
+                rows={3}
                 value={contactInfo}
-                onChange={(e) => setContactInfo(e.target.value)}
+                onChange={(e) => {
+                  setContactInfoTouched(true);
+                  setContactInfo(e.target.value);
+                }}
                 error={fieldErrors.contact_info}
               />
               {formError ? <p className="mb-4 text-sm font-semibold text-danger">{formError}</p> : null}

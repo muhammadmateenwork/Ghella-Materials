@@ -1,7 +1,7 @@
 "use client";
 
 import { useProfile, useSession, useSignOut } from "@ghella/shared";
-import { ClipboardList, LogOut, LayoutGrid, MapPinned, Package, Shield, Users, type LucideIcon } from "lucide-react";
+import { LogOut, LayoutGrid, MapPinned, Package, Shield, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
@@ -19,7 +19,6 @@ const ADMIN_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/items", label: "Materials", icon: Package },
   { href: "/admin/locations", label: "Locations", icon: MapPinned },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/reservations", label: "Reservation Log", icon: ClipboardList },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {

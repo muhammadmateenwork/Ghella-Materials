@@ -46,7 +46,7 @@ export default function NewItemPage() {
                 setIsUploadingPhotos(false);
               }
               await showSuccess(`"${item.name}" added`);
-              router.replace(`/admin/items/${item.id}`);
+              router.replace("/admin/items");
             },
             onError: (error) => showToast(`Couldn't add item: ${getFriendlyErrorMessage(error)}`, "error"),
           })

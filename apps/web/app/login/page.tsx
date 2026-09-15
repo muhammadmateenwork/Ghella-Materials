@@ -124,7 +124,7 @@ export default function LoginPage() {
             <span className="h-4 w-1 bg-primary" aria-hidden />
             <h2 className="font-display text-3xl font-extrabold uppercase tracking-tight text-text">Sign in</h2>
           </div>
-          <p className="-mt-6 mb-8 text-[15px] text-text-muted md:mb-6">Enter the details your manager gave you.</p>
+          <p className="-mt-6 mb-8 text-[15px] text-text-muted md:mb-6">Enter the details you were given to sign in.</p>
 
           <form onSubmit={handleSubmit}>
             <TextField
@@ -159,7 +159,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-8 text-xs text-text-faint md:mt-6">
-            Accounts are created by a manager. Contact your site lead if you don&apos;t have one yet.
+            Accounts are set up for you in advance — there&apos;s no sign-up here.
           </p>
         </div>
       </section>

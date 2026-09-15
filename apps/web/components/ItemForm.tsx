@@ -8,6 +8,7 @@ import { TextAreaField, TextField } from "./TextField";
 
 export function ItemForm({
   initialValues,
+  reservedQuantity = 0,
   submitLabel,
   isSubmitting,
   onSubmit,
@@ -18,6 +19,9 @@ export function ItemForm({
       "name" | "identification_number" | "quantity" | "unit" | "is_approximate" | "condition" | "location_id" | "notes"
     >
   >;
+  // Total currently actively reserved against this item — the quantity
+  // field can't be saved below this (see itemFormSchema). 0 for a new item.
+  reservedQuantity?: number;
   submitLabel: string;
   isSubmitting: boolean;
   onSubmit: (values: {
@@ -48,7 +52,7 @@ export function ItemForm({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    const result = itemFormSchema.safeParse({
+    const result = itemFormSchema(reservedQuantity).safeParse({
       name,
       identification_number: idNumber,
       quantity,
@@ -82,7 +86,7 @@ export function ItemForm({
         <TextField
           label="Quantity *"
           type="number"
-          min={0}
+          min={reservedQuantity}
           step="any"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
@@ -96,6 +100,11 @@ export function ItemForm({
           error={fieldErrors.unit}
         />
       </div>
+      {reservedQuantity > 0 ? (
+        <p className="-mt-3 mb-4 text-xs text-text-muted">
+          {reservedQuantity} already reserved — quantity can&apos;t go below that.
+        </p>
+      ) : null}
 
       <label className="mb-4 flex items-center gap-2 text-sm font-semibold text-text">
         <input

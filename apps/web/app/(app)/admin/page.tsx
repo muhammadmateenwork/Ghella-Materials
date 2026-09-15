@@ -1,4 +1,4 @@
-import { ChevronRight, ClipboardList, MapPinned, Package, Users, type LucideIcon } from "lucide-react";
+import { ChevronRight, MapPinned, Package, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { PageTitle } from "../../../components/PageTitle";
 
@@ -6,7 +6,6 @@ const LINKS: { href: string; title: string; subtitle: string; icon: LucideIcon }
   { href: "/admin/items", title: "Manage Materials", subtitle: "Add, edit, or remove items and photos", icon: Package },
   { href: "/admin/locations", title: "Manage Locations", subtitle: "Add yards and sub-locations", icon: MapPinned },
   { href: "/admin/users", title: "Manage Users", subtitle: "View accounts, change access level", icon: Users },
-  { href: "/admin/reservations", title: "Reservation Log", subtitle: "See every reservation across all staff", icon: ClipboardList },
 ];
 
 export default function AdminHubPage() {
