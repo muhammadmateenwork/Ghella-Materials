@@ -15,8 +15,13 @@ import { queryKeys } from "./keys";
 // `item_availability` view: PostgREST can't auto-detect an embeddable
 // relationship through an aggregate view (no real FK to trace), which was
 // causing a 400 on every fetch that tried to embed it.
+//
+// `creator` embeds the item's own added-by profile (items.created_by is the
+// only FK from items to profiles, so this resolves unambiguously) — shown
+// on the item detail page so a browsing user can contact them before
+// reserving.
 const ITEM_WITH_DETAILS_SELECT =
-  "*, location:locations(*), item_photos(*), reservations(quantity, status)";
+  "*, location:locations(*), item_photos(*), reservations(quantity, status), creator:profiles(name, email)";
 
 export const ITEMS_PAGE_SIZE = 20;
 
@@ -66,17 +71,29 @@ export function useItems(locationIds?: string[] | null) {
  * page is fetched, so `nextOffset` still tracks rows consumed from the
  * database, not rows displayed — a page may render fewer than
  * ITEMS_PAGE_SIZE cards without affecting pagination correctness.
+ * @param ownedByUserId When provided, restricts results to items this user
+ * added, plus any legacy item with no recorded owner (created_by null) —
+ * used by "Manage Materials" so each maximum-tier user only sees (and can
+ * only act on) their own additions. Browse omits this — every user sees
+ * the full catalog regardless of who added what.
  */
 export function useItemsInfinite(
   locationIds?: string[] | null,
   search?: string,
-  hideFullyReserved?: boolean
+  hideFullyReserved?: boolean,
+  ownedByUserId?: string | null
 ) {
   const supabase = useSupabaseClient();
   const term = search?.trim() ?? "";
 
   return useInfiniteQuery({
-    queryKey: [...queryKeys.items(locationIds), "infinite", term, hideFullyReserved ?? false],
+    queryKey: [
+      ...queryKeys.items(locationIds),
+      "infinite",
+      term,
+      hideFullyReserved ?? false,
+      ownedByUserId ?? null,
+    ],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       let query = supabase
@@ -91,6 +108,9 @@ export function useItemsInfinite(
       if (term) {
         const safe = escapeForIlike(term);
         query = query.or(`name.ilike.%${safe}%,identification_number.ilike.%${safe}%`);
+      }
+      if (ownedByUserId) {
+        query = query.or(`created_by.eq.${ownedByUserId},created_by.is.null`);
       }
 
       const { data, error } = await query;

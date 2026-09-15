@@ -270,6 +270,9 @@ export type ItemWithDetails = Item & {
   // Computed client-side from embedded reservations (see normalizeItemWithDetails
   // in queries/items.ts) — always present, never null.
   availability: ItemAvailability;
+  // Null for items added before ownership was tracked (created_by null) —
+  // shown to browsing users so they can contact the adder before reserving.
+  creator: Pick<Profile, "name" | "email"> | null;
 };
 
 export type ReservationWithDetails = Reservation & {

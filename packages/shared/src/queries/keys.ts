@@ -4,8 +4,9 @@ export const queryKeys = {
       ? (["items", { locationIds: [...locationIds].sort() }] as const)
       : (["items"] as const),
   item: (itemId: string) => ["items", itemId] as const,
+  myItems: () => ["items", "mine"] as const,
   locations: () => ["locations"] as const,
   myReservations: () => ["reservations", "mine"] as const,
-  allReservations: () => ["reservations", "all"] as const,
+  itemReservations: (itemId: string) => ["reservations", "item", itemId] as const,
   users: () => ["profiles", "all"] as const,
 };

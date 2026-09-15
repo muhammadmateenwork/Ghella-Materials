@@ -9,9 +9,9 @@ const RESERVATION_WITH_DETAILS_SELECT =
 export const RESERVATIONS_PAGE_SIZE = 20;
 
 // Relies on an explicit user_id filter, not just RLS, because the RLS read
-// policy also lets maximum-tier users read every row (for the admin
-// Reservation Log) — without this filter, a maximum-tier user's "My
-// Reservations" would silently show everyone's reservations too.
+// policy also lets maximum-tier users read reservations against items they
+// own — without this filter, a maximum-tier user's "My Reservations" could
+// pick up reservations other people made on their own materials too.
 export function useMyReservations() {
   const supabase = useSupabaseClient();
   const { session } = useSession();
@@ -32,20 +32,28 @@ export function useMyReservations() {
   });
 }
 
-/** Maximum-tier only — RLS restricts this to users with role = 'maximum'. */
-export function useAllReservations() {
+/** Active reservations against one item, with full reserver details
+ * (name, email, and the contact info they gave at reservation time) — RLS
+ * restricts this to the item's own owner (or any maximum-tier user, for a
+ * legacy item with no recorded owner). Used on the edit-material screen so
+ * the person who added it can see who's reserved how much, and cancel one
+ * on their behalf. */
+export function useItemReservations(itemId: string) {
   const supabase = useSupabaseClient();
 
   return useQuery({
-    queryKey: queryKeys.allReservations(),
+    queryKey: queryKeys.itemReservations(itemId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reservations")
         .select(RESERVATION_WITH_DETAILS_SELECT)
+        .eq("item_id", itemId)
+        .eq("status", "active")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as unknown as ReservationWithDetails[];
     },
+    enabled: Boolean(itemId),
   });
 }
 
@@ -81,32 +89,6 @@ export function useMyReservationsInfinite() {
   });
 }
 
-/** Paginated version of useAllReservations (the admin reservation log) —
- * maximum-tier only, RLS-enforced same as the non-paginated version. */
-export function useAllReservationsInfinite() {
-  const supabase = useSupabaseClient();
-
-  return useInfiniteQuery({
-    queryKey: [...queryKeys.allReservations(), "infinite"],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select(RESERVATION_WITH_DETAILS_SELECT)
-        .order("created_at", { ascending: false })
-        .range(pageParam, pageParam + RESERVATIONS_PAGE_SIZE - 1);
-      if (error) throw error;
-      const reservations = (data ?? []) as unknown as ReservationWithDetails[];
-      return {
-        reservations,
-        nextOffset:
-          reservations.length === RESERVATIONS_PAGE_SIZE ? pageParam + RESERVATIONS_PAGE_SIZE : undefined,
-      };
-    },
-    getNextPageParam: (lastPage) => lastPage.nextOffset,
-  });
-}
-
 export function useReserveItem() {
   const supabase = useSupabaseClient();
   const queryClient = useQueryClient();
@@ -129,7 +111,7 @@ export function useReserveItem() {
       queryClient.invalidateQueries({ queryKey: queryKeys.item(variables.itemId) });
       queryClient.invalidateQueries({ queryKey: ["items"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.myReservations() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.allReservations() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.itemReservations(variables.itemId) });
     },
   });
 }
@@ -149,10 +131,10 @@ export function useCancelReservation() {
     onSuccess: (data) => {
       if (data.item_id) {
         queryClient.invalidateQueries({ queryKey: queryKeys.item(data.item_id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.itemReservations(data.item_id) });
       }
       queryClient.invalidateQueries({ queryKey: ["items"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.myReservations() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.allReservations() });
     },
   });
 }
