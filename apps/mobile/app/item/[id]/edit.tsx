@@ -3,16 +3,15 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { Trash2 } from "lucide-react-native";
-import { Button } from "../../../../../src/components/Button";
-import { useConfirm } from "../../../../../src/components/ConfirmDialog";
-import { ErrorState } from "../../../../../src/components/ErrorState";
-import { ItemForm } from "../../../../../src/components/ItemForm";
-import { ItemPhotoManager } from "../../../../../src/components/ItemPhotoManager";
-import { PageHeading } from "../../../../../src/components/PageHeading";
-import { Screen } from "../../../../../src/components/Screen";
-import { StackLoader } from "../../../../../src/components/StackLoader";
-import { useToast } from "../../../../../src/components/Toast";
-import { spacing } from "../../../../../src/lib/theme";
+import { Button } from "../../../src/components/Button";
+import { useConfirm } from "../../../src/components/ConfirmDialog";
+import { ErrorState } from "../../../src/components/ErrorState";
+import { ItemForm } from "../../../src/components/ItemForm";
+import { ItemPhotoManager } from "../../../src/components/ItemPhotoManager";
+import { Screen } from "../../../src/components/Screen";
+import { StackLoader } from "../../../src/components/StackLoader";
+import { useToast } from "../../../src/components/Toast";
+import { spacing } from "../../../src/lib/theme";
 
 export default function EditItemScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -69,8 +68,6 @@ export default function EditItemScreen() {
 
   return (
     <Screen scroll>
-      <PageHeading style={styles.title}>Edit material</PageHeading>
-
       <ItemPhotoManager itemId={item.id} photos={item.item_photos} />
 
       <ItemForm
@@ -100,6 +97,5 @@ export default function EditItemScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  title: { marginBottom: spacing.md },
   deleteButton: { marginTop: spacing.lg },
 });

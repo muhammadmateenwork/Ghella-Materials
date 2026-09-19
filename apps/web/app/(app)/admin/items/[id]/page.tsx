@@ -60,11 +60,8 @@ export default function EditItemPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <button
-        onClick={() => router.push("/admin/items")}
-        className="mb-5 text-sm font-semibold text-text-muted hover:text-text"
-      >
-        ← Back to materials
+      <button onClick={() => router.back()} className="mb-5 text-sm font-semibold text-text-muted hover:text-text">
+        ← Back
       </button>
       <PageTitle>Edit material</PageTitle>
 

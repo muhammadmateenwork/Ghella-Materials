@@ -145,7 +145,7 @@ export default function BrowseScreen() {
                   router.push({ pathname: "/(tabs)", params: { location: locationId } })
                 }
                 isOwner={isOwner}
-                onEdit={isOwner ? () => router.push(`/(tabs)/admin/items/${item.id}/edit`) : undefined}
+                onEdit={isOwner ? () => router.push(`/item/${item.id}/edit`) : undefined}
                 onDelete={isOwner ? () => handleDelete(item) : undefined}
               />
             );

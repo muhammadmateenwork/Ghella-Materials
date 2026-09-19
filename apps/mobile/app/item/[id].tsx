@@ -196,7 +196,7 @@ export default function ItemDetailScreen() {
             {isOwner ? (
               <View style={styles.ownerActions}>
                 <Pressable
-                  onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}
+                  onPress={() => router.push(`/item/${item.id}/edit`)}
                   style={styles.ownerButton}
                   hitSlop={8}
                   accessibilityLabel="Edit material"

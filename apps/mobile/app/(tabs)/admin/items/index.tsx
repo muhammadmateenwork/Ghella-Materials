@@ -93,7 +93,7 @@ export default function AdminItemsScreen() {
             ) : null
           }
           renderItem={({ item }) => (
-            <Card style={styles.row} onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}>
+            <Card style={styles.row} onPress={() => router.push(`/item/${item.id}/edit`)}>
               <View style={styles.rowContent}>
                 {item.item_photos[0] ? (
                   <Image
@@ -123,7 +123,7 @@ export default function AdminItemsScreen() {
                     <ClipboardList size={16} color={colors.textMuted} strokeWidth={2} />
                   </Pressable>
                   <Pressable
-                    onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}
+                    onPress={() => router.push(`/item/${item.id}/edit`)}
                     disabled={deleteItem.isPending && deleteItem.variables === item.id}
                     hitSlop={8}
                     style={styles.iconButton}
