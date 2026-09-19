@@ -20,6 +20,9 @@ export default function NewItemPage() {
 
   return (
     <div className="mx-auto max-w-lg">
+      <button onClick={() => router.back()} className="mb-5 text-sm font-semibold text-text-muted hover:text-text">
+        ← Back
+      </button>
       <PageTitle>Add material</PageTitle>
 
       <PendingPhotoPicker files={pendingFiles} onChange={setPendingFiles} />

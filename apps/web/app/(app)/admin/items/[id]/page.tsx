@@ -60,6 +60,12 @@ export default function EditItemPage() {
 
   return (
     <div className="mx-auto max-w-lg">
+      <button
+        onClick={() => router.push("/admin/items")}
+        className="mb-5 text-sm font-semibold text-text-muted hover:text-text"
+      >
+        ← Back to materials
+      </button>
       <PageTitle>Edit material</PageTitle>
 
       <ItemPhotoManager itemId={item.id} photos={item.item_photos} />
