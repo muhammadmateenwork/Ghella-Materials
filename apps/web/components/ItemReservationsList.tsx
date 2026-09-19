@@ -1,7 +1,8 @@
 "use client";
 
-import { formatQuantity, getFriendlyErrorMessage, useCancelReservation, useItemReservations } from "@ghella/shared";
-import { ClipboardList, Mail, User } from "lucide-react";
+import { formatQuantity, getFriendlyErrorMessage, reservationsToCsv, useCancelReservation, useItemReservations } from "@ghella/shared";
+import { ClipboardList, Download, Mail, User } from "lucide-react";
+import { downloadCsv } from "../lib/downloadCsv";
 import { useConfirm } from "./ConfirmDialog";
 import { EmptyState } from "./EmptyState";
 import { StackLoader } from "./StackLoader";
@@ -9,11 +10,13 @@ import { useToast } from "./Toast";
 
 export function ItemReservationsList({
   itemId,
+  itemName,
   unit,
   isApproximate,
   showEmptyState = false,
 }: {
   itemId: string;
+  itemName: string;
   unit: string | null;
   isApproximate: boolean;
   // Inline (edit-material page) just shows nothing when there's nothing to
@@ -62,9 +65,18 @@ export function ItemReservationsList({
 
   return (
     <div className="mb-6">
-      <p className="mb-3 text-sm font-bold text-text">
-        Reservations on this material <span className="font-normal text-text-faint">({reservations.length})</span>
-      </p>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-sm font-bold text-text">
+          Reservations on this material <span className="font-normal text-text-faint">({reservations.length})</span>
+        </p>
+        <button
+          type="button"
+          onClick={() => downloadCsv(`${itemName}-reservations.csv`, reservationsToCsv(itemName, reservations))}
+          className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-text"
+        >
+          <Download size={13} strokeWidth={2} /> Export CSV
+        </button>
+      </div>
       <div className="flex flex-col gap-2">
         {reservations.map((r) => (
           <div key={r.id} className="rounded-sm border border-border bg-surface p-3.5">

@@ -51,7 +51,8 @@
           "icon": "./assets/android-icon-monochrome.png",
           "color": "#E8590C"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "router": {},

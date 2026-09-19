@@ -1,20 +1,23 @@
-import { formatQuantity, getFriendlyErrorMessage, useCancelReservation, useItemReservations } from "@ghella/shared";
-import { ClipboardList, Mail, User } from "lucide-react-native";
+import { formatQuantity, getFriendlyErrorMessage, reservationsToCsv, useCancelReservation, useItemReservations } from "@ghella/shared";
+import { ClipboardList, Download, Mail, User } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Card } from "./Card";
 import { useConfirm } from "./ConfirmDialog";
 import { EmptyState } from "./EmptyState";
 import { StackLoader } from "./StackLoader";
 import { useToast } from "./Toast";
+import { shareCsv } from "../lib/exportCsv";
 import { colors, spacing, typography } from "../lib/theme";
 
 export function ItemReservationsList({
   itemId,
+  itemName,
   unit,
   isApproximate,
   showEmptyState = false,
 }: {
   itemId: string;
+  itemName: string;
   unit: string | null;
   isApproximate: boolean;
   // Inline (edit-material screen) just shows nothing when there's nothing
@@ -53,9 +56,23 @@ export function ItemReservationsList({
     );
   }
 
+  const handleExport = async () => {
+    try {
+      await shareCsv(`${itemName}-reservations`, reservationsToCsv(itemName, reservations));
+    } catch (err) {
+      showToast(getFriendlyErrorMessage(err), "error");
+    }
+  };
+
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Reservations on this material ({reservations.length})</Text>
+      <View style={styles.headingRow}>
+        <Text style={styles.heading}>Reservations on this material ({reservations.length})</Text>
+        <Pressable onPress={handleExport} hitSlop={8} style={styles.exportLink}>
+          <Download size={13} color={colors.textMuted} strokeWidth={2} />
+          <Text style={styles.exportLinkText}>Export CSV</Text>
+        </Pressable>
+      </View>
       <View style={styles.list}>
         {reservations.map((r) => (
           <Card key={r.id} style={styles.row}>
@@ -96,7 +113,10 @@ export function ItemReservationsList({
 const styles = StyleSheet.create({
   loading: { marginVertical: spacing.md },
   section: { marginBottom: spacing.lg },
-  heading: { ...typography.bodyStrong, fontSize: 14, color: colors.text, marginBottom: spacing.sm },
+  headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginBottom: spacing.sm },
+  heading: { ...typography.bodyStrong, fontSize: 14, color: colors.text, flexShrink: 1 },
+  exportLink: { flexDirection: "row", alignItems: "center", gap: 4 },
+  exportLinkText: { ...typography.captionStrong, color: colors.textMuted },
   list: { gap: spacing.sm },
   row: {},
   rowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.xs },

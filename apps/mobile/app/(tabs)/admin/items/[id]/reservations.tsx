@@ -44,7 +44,13 @@ export default function ItemReservationsScreen() {
   return (
     <Screen scroll>
       <Text style={styles.itemName}>{item.name}</Text>
-      <ItemReservationsList itemId={item.id} unit={item.unit} isApproximate={item.is_approximate} showEmptyState />
+      <ItemReservationsList
+        itemId={item.id}
+        itemName={item.name}
+        unit={item.unit}
+        isApproximate={item.is_approximate}
+        showEmptyState
+      />
     </Screen>
   );
 }

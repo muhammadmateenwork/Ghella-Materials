@@ -48,6 +48,7 @@ export default function ItemReservationsPage() {
 
       <ItemReservationsList
         itemId={item.id}
+        itemName={item.name}
         unit={item.unit}
         isApproximate={item.is_approximate}
         showEmptyState

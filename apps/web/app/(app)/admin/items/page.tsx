@@ -17,6 +17,7 @@ import { Button } from "../../../../components/Button";
 import { useConfirm } from "../../../../components/ConfirmDialog";
 import { EmptyState } from "../../../../components/EmptyState";
 import { ErrorState } from "../../../../components/ErrorState";
+import { ExportMaterialsButton } from "../../../../components/ExportMaterialsButton";
 import { PageTitle } from "../../../../components/PageTitle";
 import { StackLoader } from "../../../../components/StackLoader";
 import { useToast } from "../../../../components/Toast";
@@ -53,11 +54,14 @@ export default function AdminItemsPage() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between gap-2">
         <PageTitle className="">Materials</PageTitle>
-        <Link href="/admin/items/new">
-          <Button icon={Plus}>Add item</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <ExportMaterialsButton ownedByUserId={profile?.id} />
+          <Link href="/admin/items/new">
+            <Button icon={Plus}>Add item</Button>
+          </Link>
+        </div>
       </div>
 
       {itemsQuery.isLoading ? (

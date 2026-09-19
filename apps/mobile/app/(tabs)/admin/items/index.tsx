@@ -9,14 +9,15 @@ import {
 } from "@ghella/shared";
 import { router } from "expo-router";
 import { Image } from "expo-image";
-import { ClipboardList, ImageOff, Package, Pencil, Plus, Trash2 } from "lucide-react-native";
-import { useMemo } from "react";
+import { ClipboardList, Download, ImageOff, Package, Pencil, Plus, Trash2 } from "lucide-react-native";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../../../src/components/Button";
 import { Card } from "../../../../src/components/Card";
 import { useConfirm } from "../../../../src/components/ConfirmDialog";
 import { EmptyState } from "../../../../src/components/EmptyState";
 import { ErrorState } from "../../../../src/components/ErrorState";
+import { ExportMaterialsModal } from "../../../../src/components/ExportMaterialsModal";
 import { Screen } from "../../../../src/components/Screen";
 import { StackLoader } from "../../../../src/components/StackLoader";
 import { ThemedRefreshControl } from "../../../../src/components/ThemedRefreshControl";
@@ -31,6 +32,7 @@ export default function AdminItemsScreen() {
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const items = useMemo(() => itemsQuery.data?.pages.flatMap((page) => page.items) ?? [], [itemsQuery.data]);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const handleDelete = async (item: { id: string; name: string }) => {
     const confirmed = await confirmDialog({
@@ -49,6 +51,7 @@ export default function AdminItemsScreen() {
   return (
     <Screen padded={false}>
       <View style={styles.header}>
+        <Button title="Export" icon={Download} variant="ghost" size="sm" onPress={() => setExportOpen(true)} />
         <Button
           title="Add item"
           icon={Plus}
@@ -142,6 +145,12 @@ export default function AdminItemsScreen() {
           )}
         />
       )}
+
+      <ExportMaterialsModal
+        visible={exportOpen}
+        onClose={() => setExportOpen(false)}
+        ownedByUserId={profile?.id}
+      />
     </Screen>
   );
 }
@@ -150,7 +159,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     marginBottom: spacing.sm,
