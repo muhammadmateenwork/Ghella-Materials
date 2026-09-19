@@ -11,9 +11,21 @@ import {
 } from "@ghella/shared";
 import { Check, ChevronRight, MapPin, Plus, Search, X } from "lucide-react-native";
 import { useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "./Button";
+import { useKeyboardHeight } from "./Screen";
 import { TextField } from "./TextField";
 import { colors, fonts, radius, spacing, typography } from "../lib/theme";
 
@@ -40,6 +52,7 @@ export function LocationPickerField({
   const [newParentId, setNewParentId] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | undefined>();
   const createLocation = useCreateLocation();
+  const keyboardHeight = useKeyboardHeight();
   const selectedLabel = value ? getLocationPath(locations, value) : "Select a location";
   const flatLocations = useMemo(
     () => [...locations].sort((a, b) => getLocationPath(locations, a.id).localeCompare(getLocationPath(locations, b.id))),
@@ -188,24 +201,32 @@ export function LocationPickerField({
               />
             </>
           ) : isAdding ? (
-            <View style={styles.addForm}>
-              <TextField label="Location name *" value={newName} onChangeText={setNewName} error={addError} />
-              <Text style={styles.label}>Parent location</Text>
-              <Pressable style={styles.field} onPress={() => setPickingParent(true)}>
-                <MapPin size={16} color={colors.textMuted} strokeWidth={2} />
-                <Text style={[styles.fieldText, newParentId ? styles.value : styles.placeholder]} numberOfLines={1}>
-                  {newParentId ? getLocationPath(locations, newParentId) : "No parent (top-level yard)"}
-                </Text>
-                <ChevronDown />
-              </Pressable>
-              <Button
-                title="Add location"
-                icon={Plus}
-                onPress={handleAddLocation}
-                loading={createLocation.isPending}
-                style={styles.addButton}
-              />
-            </View>
+            <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+              <ScrollView
+                contentContainerStyle={[
+                  styles.addForm,
+                  keyboardHeight > 0 && { paddingBottom: keyboardHeight + spacing.lg },
+                ]}
+                keyboardShouldPersistTaps="handled"
+              >
+                <TextField label="Location name *" value={newName} onChangeText={setNewName} error={addError} />
+                <Text style={styles.label}>Parent location</Text>
+                <Pressable style={styles.field} onPress={() => setPickingParent(true)}>
+                  <MapPin size={16} color={colors.textMuted} strokeWidth={2} />
+                  <Text style={[styles.fieldText, newParentId ? styles.value : styles.placeholder]} numberOfLines={1}>
+                    {newParentId ? getLocationPath(locations, newParentId) : "No parent (top-level yard)"}
+                  </Text>
+                  <ChevronDown />
+                </Pressable>
+                <Button
+                  title="Add location"
+                  icon={Plus}
+                  onPress={handleAddLocation}
+                  loading={createLocation.isPending}
+                  style={styles.addButton}
+                />
+              </ScrollView>
+            </KeyboardAvoidingView>
           ) : (
             <>
               <View style={styles.searchBar}>
@@ -301,6 +322,7 @@ function TreeRow({
 
 const styles = StyleSheet.create({
   container: { marginBottom: spacing.md },
+  flex: { flex: 1 },
   label: { ...typography.bodyStrong, fontSize: 13, color: colors.text, marginBottom: spacing.xs },
   field: {
     flexDirection: "row",
