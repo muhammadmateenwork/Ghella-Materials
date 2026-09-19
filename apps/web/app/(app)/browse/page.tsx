@@ -14,6 +14,7 @@ import {
 import { Boxes, PackageCheck, PackageSearch, PackageX, Plus, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useConfirm } from "../../../components/ConfirmDialog";
 import { EmptyState } from "../../../components/EmptyState";
 import { ErrorState } from "../../../components/ErrorState";
@@ -177,16 +178,24 @@ export default function BrowsePage() {
         </>
       )}
 
-      {isMaxTier ? (
-        <button
-          type="button"
-          onClick={() => router.push("/admin/items/new")}
-          aria-label="Add material"
-          className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-text shadow-[0_4px_16px_rgba(20,33,61,0.3)] transition-transform hover:-translate-y-0.5 active:scale-95 md:bottom-8 md:right-8"
-        >
-          <Plus size={26} strokeWidth={2.5} />
-        </button>
-      ) : null}
+      {isMaxTier && typeof document !== "undefined"
+        ? createPortal(
+            // Portalled to document.body: the page content sits inside a
+            // per-route entrance-animation wrapper that briefly has an
+            // active `transform`, which would otherwise become the
+            // containing block for this fixed-position button instead of
+            // the real viewport.
+            <button
+              type="button"
+              onClick={() => router.push("/admin/items/new")}
+              aria-label="Add material"
+              className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-text shadow-[0_4px_16px_rgba(20,33,61,0.3)] transition-transform hover:-translate-y-0.5 active:scale-95 md:bottom-8 md:right-8"
+            >
+              <Plus size={26} strokeWidth={2.5} />
+            </button>,
+            document.body
+          )
+        : null}
 
       {quickViewItem ? (
         <ItemQuickView

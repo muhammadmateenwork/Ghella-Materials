@@ -10,6 +10,7 @@ import {
 } from "@ghella/shared";
 import { Download, X } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { downloadCsv } from "../lib/downloadCsv";
 import { useToast } from "./Toast";
 
@@ -66,8 +67,9 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
         <Download size={14} strokeWidth={2} /> Export CSV
       </button>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" onClick={() => setOpen(false)}>
+      {open
+        ? createPortal(
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" onClick={() => setOpen(false)}>
           <div
             className="w-full max-w-sm rounded-md bg-surface p-5 shadow-[0_20px_60px_rgba(12,21,38,0.35)]"
             onClick={(e) => e.stopPropagation()}
@@ -146,8 +148,10 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
               {isExporting ? "Preparing…" : "Download CSV"}
             </button>
           </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </>
   );
 }

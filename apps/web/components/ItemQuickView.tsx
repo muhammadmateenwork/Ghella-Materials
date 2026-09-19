@@ -2,6 +2,7 @@
 
 import { formatQuantity, getItemPhotoUrl, useSupabaseClient, type ItemWithDetails, type Location } from "@ghella/shared";
 import { ImageOff, Mail, PackageCheck, Tag, User, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import { Badge } from "./Badge";
 import { LocationBreadcrumb } from "./LocationBreadcrumb";
 
@@ -24,7 +25,13 @@ export function ItemQuickView({
   const photo = item.item_photos[0];
   const photoUrl = photo ? getItemPhotoUrl(supabase, photo.storage_path) : null;
 
-  return (
+  // Rendered via a portal to document.body: this overlay uses position:fixed
+  // to cover the viewport, but the Browse page (and every other page) wraps
+  // its content in an entrance-animation div that briefly has an active
+  // `transform` — and a transformed ancestor becomes the containing block
+  // for `position: fixed` descendants, so without the portal this could
+  // anchor to that wrapper's box instead of the true viewport.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4"
       onClick={onClose}
@@ -107,6 +114,7 @@ export function ItemQuickView({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
