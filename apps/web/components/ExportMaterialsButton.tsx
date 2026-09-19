@@ -62,7 +62,7 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-2 text-xs font-bold uppercase tracking-wide text-text-muted transition-colors hover:bg-surface-alt hover:text-text"
+        className="flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-sm border border-border bg-surface px-4 py-2.5 text-[13px] font-bold uppercase tracking-wide text-text-muted transition-colors hover:bg-surface-alt hover:text-text sm:flex-none"
       >
         <Download size={14} strokeWidth={2} /> Export Excel
       </button>

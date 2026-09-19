@@ -3,6 +3,7 @@
 import { useItem, useProfile } from "@ghella/shared";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { BackButton } from "../../../../../../components/BackButton";
 import { ErrorState } from "../../../../../../components/ErrorState";
 import { ItemReservationsList } from "../../../../../../components/ItemReservationsList";
 import { PageTitle } from "../../../../../../components/PageTitle";
@@ -37,12 +38,7 @@ export default function ItemReservationsPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <button
-        onClick={() => router.push("/admin/items")}
-        className="mb-5 text-sm font-semibold text-text-muted hover:text-text"
-      >
-        ← Back to materials
-      </button>
+      <BackButton onClick={() => router.push("/admin/items")} />
       <PageTitle>Reservations</PageTitle>
       <p className="-mt-4 mb-6 text-sm text-text-muted">{item.name}</p>
 

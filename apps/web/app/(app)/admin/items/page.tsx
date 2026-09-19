@@ -54,12 +54,14 @@ export default function AdminItemsPage() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between gap-2">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <PageTitle className="">Materials</PageTitle>
         <div className="flex items-center gap-2">
           <ExportMaterialsButton ownedByUserId={profile?.id} />
-          <Link href="/admin/items/new">
-            <Button icon={Plus}>Add item</Button>
+          <Link href="/admin/items/new" className="flex-1 sm:flex-none">
+            <Button icon={Plus} className="w-full">
+              Add item
+            </Button>
           </Link>
         </div>
       </div>

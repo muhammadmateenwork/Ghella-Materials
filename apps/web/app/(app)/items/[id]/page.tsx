@@ -15,6 +15,7 @@ import {
 import { ImageOff, Mail, PackageCheck, Pencil, Tag, Trash2, User } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BackButton } from "../../../../components/BackButton";
 import { Badge } from "../../../../components/Badge";
 import { Button } from "../../../../components/Button";
 import { useConfirm } from "../../../../components/ConfirmDialog";
@@ -114,12 +115,7 @@ export default function ItemDetailPage() {
 
   return (
     <div>
-      <button
-        onClick={() => router.back()}
-        className="mb-5 text-sm font-semibold text-text-muted hover:text-text"
-      >
-        ← Back to materials
-      </button>
+      <BackButton />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div>

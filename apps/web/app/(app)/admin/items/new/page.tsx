@@ -3,6 +3,7 @@
 import { getFriendlyErrorMessage, useCreateItem, useUploadItemPhoto } from "@ghella/shared";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { BackButton } from "../../../../../components/BackButton";
 import { ItemForm } from "../../../../../components/ItemForm";
 import { PageTitle } from "../../../../../components/PageTitle";
 import { PendingPhotoPicker } from "../../../../../components/PendingPhotoPicker";
@@ -20,9 +21,7 @@ export default function NewItemPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <button onClick={() => router.back()} className="mb-5 text-sm font-semibold text-text-muted hover:text-text">
-        ← Back
-      </button>
+      <BackButton />
       <PageTitle>Add material</PageTitle>
 
       <PendingPhotoPicker files={pendingFiles} onChange={setPendingFiles} />

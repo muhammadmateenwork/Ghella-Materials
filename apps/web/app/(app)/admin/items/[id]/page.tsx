@@ -4,6 +4,7 @@ import { getFriendlyErrorMessage, useDeleteItem, useItem, useProfile, useUpdateI
 import { Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { BackButton } from "../../../../../components/BackButton";
 import { Button } from "../../../../../components/Button";
 import { useConfirm } from "../../../../../components/ConfirmDialog";
 import { ErrorState } from "../../../../../components/ErrorState";
@@ -60,9 +61,7 @@ export default function EditItemPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <button onClick={() => router.back()} className="mb-5 text-sm font-semibold text-text-muted hover:text-text">
-        ← Back
-      </button>
+      <BackButton />
       <PageTitle>Edit material</PageTitle>
 
       <ItemPhotoManager itemId={item.id} photos={item.item_photos} />
