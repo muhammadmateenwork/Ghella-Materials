@@ -1,7 +1,7 @@
 "use client";
 
 import { formatQuantity, getFriendlyErrorMessage, reservationsToCsv, useCancelReservation, useItemReservations } from "@ghella/shared";
-import { ClipboardList, Download, Mail, User } from "lucide-react";
+import { ClipboardList, Download, Mail, MessageSquare, X } from "lucide-react";
 import { downloadCsv } from "../lib/downloadCsv";
 import { useConfirm } from "./ConfirmDialog";
 import { EmptyState } from "./EmptyState";
@@ -77,43 +77,58 @@ export function ItemReservationsList({
           <Download size={13} strokeWidth={2} /> Export CSV
         </button>
       </div>
-      <div className="flex flex-col gap-2">
-        {reservations.map((r) => (
-          <div key={r.id} className="rounded-sm border border-border bg-surface p-3.5">
-            <div className="mb-2 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-text">
-                  <User size={14} className="shrink-0 text-text-faint" strokeWidth={2} />
-                  {r.user?.name ?? "Deleted user"}
-                </p>
-                {r.user?.email ? (
-                  <p className="flex items-center gap-1.5 truncate text-xs text-text-muted">
-                    <Mail size={12} className="shrink-0 text-text-faint" strokeWidth={2} />
-                    {r.user.email}
+      <div className="flex flex-col gap-3">
+        {reservations.map((r) => {
+          const name = r.user?.name ?? "Deleted user";
+          const isCancelling = cancelReservation.isPending && cancelReservation.variables === r.id;
+          return (
+            <div key={r.id} className="rounded-md border border-border bg-surface p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary-dark">
+                    {name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 pt-0.5">
+                    <p className="truncate text-sm font-bold text-text">{name}</p>
+                    {r.user?.email ? (
+                      <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-text-muted">
+                        <Mail size={12} className="shrink-0 text-text-faint" strokeWidth={2} />
+                        {r.user.email}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-text-faint">Reserved</p>
+                  <p className="font-display text-lg font-black tracking-tight text-primary">
+                    {formatQuantity(r.quantity, unit, isApproximate)}
                   </p>
-                ) : null}
+                </div>
               </div>
-              <span className="shrink-0 text-sm font-bold text-primary">
-                {formatQuantity(r.quantity, unit, isApproximate)}
-              </span>
+
+              {r.contact_info ? (
+                <div className="mt-3 rounded-sm border border-border bg-surface-alt p-2.5">
+                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-text-faint">
+                    <MessageSquare size={11} strokeWidth={2} /> Contact info
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm text-text">{r.contact_info}</p>
+                </div>
+              ) : null}
+
+              <div className="mt-3 flex justify-end border-t border-border pt-3">
+                <button
+                  type="button"
+                  onClick={() => handleCancel(r.id, name)}
+                  disabled={isCancelling}
+                  className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <X size={13} strokeWidth={2.5} />
+                  {isCancelling ? "Cancelling…" : "Cancel reservation"}
+                </button>
+              </div>
             </div>
-            {r.contact_info ? (
-              <p className="mb-2 whitespace-pre-wrap rounded-sm bg-surface-alt px-2.5 py-2 text-xs text-text-muted">
-                {r.contact_info}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => handleCancel(r.id, r.user?.name ?? "This person")}
-              disabled={cancelReservation.isPending && cancelReservation.variables === r.id}
-              className="text-xs font-semibold text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {cancelReservation.isPending && cancelReservation.variables === r.id
-                ? "Cancelling…"
-                : "Cancel reservation"}
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
