@@ -15,6 +15,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "
 import { Button } from "../../../src/components/Button";
 import { Card } from "../../../src/components/Card";
 import { useConfirm } from "../../../src/components/ConfirmDialog";
+import { EmptyState } from "../../../src/components/EmptyState";
 import { LocationPickerField } from "../../../src/components/LocationPickerField";
 import { Screen } from "../../../src/components/Screen";
 import { StackLoader } from "../../../src/components/StackLoader";
@@ -129,6 +130,12 @@ export default function AdminLocationsScreen() {
       <Text style={styles.sectionTitle}>Existing locations</Text>
       {locationsQuery.isLoading ? (
         <StackLoader size="sm" style={styles.loading} />
+      ) : locations.length === 0 ? (
+        <EmptyState
+          icon={MapPinned}
+          title="No locations yet"
+          subtitle="Add your first yard above — materials need a location before they can be added."
+        />
       ) : (
         <FlatList
           data={locations}

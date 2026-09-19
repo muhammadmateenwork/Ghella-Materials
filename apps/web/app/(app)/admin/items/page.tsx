@@ -71,7 +71,12 @@ export default function AdminItemsPage() {
       ) : itemsQuery.isError ? (
         <ErrorState message={itemsQuery.error?.message} onRetry={() => itemsQuery.refetch()} />
       ) : items.length === 0 ? (
-        <EmptyState icon={Package} title="No materials yet" subtitle="Add the first item to get started." />
+        <EmptyState
+          icon={Package}
+          title="No materials yet"
+          subtitle="Add the first item to get started."
+          action={{ label: "Add item", icon: Plus, onClick: () => router.push("/admin/items/new") }}
+        />
       ) : (
         <>
           <div className="flex flex-col gap-2">

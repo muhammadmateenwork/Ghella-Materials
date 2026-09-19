@@ -141,6 +141,11 @@ export default function BrowsePage() {
           icon={PackageSearch}
           title={debouncedSearch ? "No materials match your search" : "No materials recorded yet"}
           subtitle={debouncedSearch ? "Try a different name, ID, location, or note." : undefined}
+          action={
+            !debouncedSearch && isMaxTier
+              ? { label: "Add material", icon: Plus, onClick: () => router.push("/admin/items/new") }
+              : undefined
+          }
         />
       ) : (
         <>

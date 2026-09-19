@@ -6,8 +6,9 @@ import {
   useMyReservationsInfinite,
   type ReservationWithDetails,
 } from "@ghella/shared";
-import { CalendarClock, PackageOpen } from "lucide-react";
+import { CalendarClock, PackageSearch, PackageOpen } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { Badge } from "../../../components/Badge";
 import { Card } from "../../../components/Card";
@@ -21,6 +22,7 @@ import { useToast } from "../../../components/Toast";
 import { useLoadMoreSentinel } from "../../../components/useLoadMoreSentinel";
 
 export default function ReservationsPage() {
+  const router = useRouter();
   const reservationsQuery = useMyReservationsInfinite();
   const reservations = useMemo(
     () => reservationsQuery.data?.pages.flatMap((page) => page.reservations) ?? [],
@@ -61,7 +63,12 @@ export default function ReservationsPage() {
       ) : reservationsQuery.isError ? (
         <ErrorState message={reservationsQuery.error?.message} onRetry={() => reservationsQuery.refetch()} />
       ) : reservations.length === 0 ? (
-        <EmptyState icon={PackageOpen} title="Nothing reserved yet" subtitle="Materials you reserve will show up here." />
+        <EmptyState
+          icon={PackageOpen}
+          title="Nothing reserved yet"
+          subtitle="Materials you reserve will show up here."
+          action={{ label: "Browse materials", icon: PackageSearch, onClick: () => router.push("/browse") }}
+        />
       ) : (
         <>
           <div className="flex flex-col gap-3">

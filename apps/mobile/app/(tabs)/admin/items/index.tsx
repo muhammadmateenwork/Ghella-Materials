@@ -65,7 +65,12 @@ export default function AdminItemsScreen() {
       ) : itemsQuery.isError ? (
         <ErrorState message={itemsQuery.error?.message} onRetry={() => itemsQuery.refetch()} />
       ) : items.length === 0 ? (
-        <EmptyState icon={Package} title="No materials yet" subtitle="Add the first item to get started." />
+        <EmptyState
+          icon={Package}
+          title="No materials yet"
+          subtitle="Add the first item to get started."
+          action={{ label: "Add item", icon: Plus, onPress: () => router.push("/(tabs)/admin/items/new") }}
+        />
       ) : (
         <FlatList
           data={items}

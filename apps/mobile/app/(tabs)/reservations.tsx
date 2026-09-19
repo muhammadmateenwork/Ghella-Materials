@@ -5,7 +5,7 @@ import {
   type ReservationWithDetails,
 } from "@ghella/shared";
 import { router } from "expo-router";
-import { CalendarClock, PackageOpen } from "lucide-react-native";
+import { CalendarClock, PackageOpen, PackageSearch } from "lucide-react-native";
 import { useMemo } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge } from "../../src/components/Badge";
@@ -56,6 +56,7 @@ export default function MyReservationsScreen() {
           icon={PackageOpen}
           title="Nothing reserved yet"
           subtitle="Materials you reserve will show up here."
+          action={{ label: "Browse materials", icon: PackageSearch, onPress: () => router.push("/(tabs)") }}
         />
       ) : (
         <FlatList

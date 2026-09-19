@@ -16,10 +16,23 @@ import { useState } from "react";
 import { Button } from "../../../../components/Button";
 import { Card } from "../../../../components/Card";
 import { useConfirm } from "../../../../components/ConfirmDialog";
+import { EmptyState } from "../../../../components/EmptyState";
+import { LocationTreePicker } from "../../../../components/LocationTreePicker";
 import { PageTitle } from "../../../../components/PageTitle";
 import { StackLoader } from "../../../../components/StackLoader";
-import { SelectField, TextField } from "../../../../components/TextField";
+import { TextField } from "../../../../components/TextField";
 import { useToast } from "../../../../components/Toast";
+
+// A synthetic "no parent" row so the searchable tree picker can represent
+// "top-level yard" as a normal selectable option, the same trick the
+// mobile version of this screen already uses.
+const NO_PARENT_OPTION: Location = {
+  id: "",
+  name: "No parent (top-level yard)",
+  parent_location_id: null,
+  created_at: "",
+  created_by: null,
+};
 
 export default function AdminLocationsPage() {
   const locationsQuery = useLocations();
@@ -120,18 +133,12 @@ export default function AdminLocationsPage() {
         <p className="mb-4 text-sm font-bold text-text">Add a location</p>
         <form onSubmit={handleAdd}>
           <TextField label="Name *" value={name} onChange={(e) => setName(e.target.value)} error={nameError} />
-          <SelectField
+          <LocationTreePicker
             label="Parent location (leave as 'No parent' for a top-level yard)"
+            locations={[NO_PARENT_OPTION, ...locations]}
             value={parentId}
-            onChange={(e) => setParentId(e.target.value)}
-          >
-            <option value="">No parent (top-level yard)</option>
-            {locations.map((location) => (
-              <option key={location.id} value={location.id}>
-                {getLocationPath(locations, location.id)}
-              </option>
-            ))}
-          </SelectField>
+            onChange={setParentId}
+          />
           <Button type="submit" icon={Plus} loading={createLocation.isPending}>
             Add location
           </Button>
@@ -145,6 +152,12 @@ export default function AdminLocationsPage() {
         </div>
       ) : locationsQuery.isError ? (
         <p className="text-sm text-danger">Couldn&apos;t load locations: {locationsQuery.error?.message}</p>
+      ) : locations.length === 0 ? (
+        <EmptyState
+          icon={MapPinned}
+          title="No locations yet"
+          subtitle="Add your first yard above — materials need a location before they can be added."
+        />
       ) : (
         <div className="flex flex-col gap-2">
           {locations.map((location) => {
@@ -160,20 +173,12 @@ export default function AdminLocationsPage() {
                     onChange={(e) => setEditName(e.target.value)}
                     error={editError}
                   />
-                  <SelectField
+                  <LocationTreePicker
                     label="Parent location"
+                    locations={[NO_PARENT_OPTION, ...locations.filter((l) => !excludedIds!.has(l.id))]}
                     value={editParentId}
-                    onChange={(e) => setEditParentId(e.target.value)}
-                  >
-                    <option value="">No parent (top-level yard)</option>
-                    {locations
-                      .filter((l) => !excludedIds!.has(l.id))
-                      .map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {getLocationPath(locations, l.id)}
-                        </option>
-                      ))}
-                  </SelectField>
+                    onChange={setEditParentId}
+                  />
                   <div className="flex gap-2">
                     <Button
                       size="sm"

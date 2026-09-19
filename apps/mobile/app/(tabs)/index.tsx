@@ -117,6 +117,11 @@ export default function BrowseScreen() {
           icon={PackageSearch}
           title={debouncedSearch ? "No materials match your search" : "No materials recorded yet"}
           subtitle={debouncedSearch ? "Try a different name, ID, location, or note." : undefined}
+          action={
+            !debouncedSearch && isMaxTier
+              ? { label: "Add material", icon: Plus, onPress: () => router.push("/(tabs)/admin/items/new") }
+              : undefined
+          }
         />
       ) : (
         <FlatList
