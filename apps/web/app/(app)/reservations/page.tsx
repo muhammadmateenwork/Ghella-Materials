@@ -2,12 +2,15 @@
 
 import {
   getFriendlyErrorMessage,
+  getItemPhotoUrl,
   useCancelReservation,
+  useItem,
+  useLocations,
   useMyReservationsInfinite,
+  useSupabaseClient,
   type ReservationWithDetails,
 } from "@ghella/shared";
-import { CalendarClock, PackageSearch, PackageOpen } from "lucide-react";
-import Link from "next/link";
+import { CalendarClock, ImageOff, PackageSearch, PackageOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Badge } from "../../../components/Badge";
@@ -15,6 +18,7 @@ import { Card } from "../../../components/Card";
 import { useConfirm } from "../../../components/ConfirmDialog";
 import { EmptyState } from "../../../components/EmptyState";
 import { ErrorState } from "../../../components/ErrorState";
+import { ItemQuickView } from "../../../components/ItemQuickView";
 import { PageTitle } from "../../../components/PageTitle";
 import { StackLoader } from "../../../components/StackLoader";
 import { useSuccessOverlay } from "../../../components/SuccessOverlay";
@@ -29,8 +33,11 @@ const STATUS_TABS: { value: "all" | "active" | "cancelled"; label: string }[] = 
 
 export default function ReservationsPage() {
   const router = useRouter();
+  const supabase = useSupabaseClient();
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "cancelled">("all");
+  const [quickViewReservation, setQuickViewReservation] = useState<ReservationWithDetails | null>(null);
   const reservationsQuery = useMyReservationsInfinite();
+  const locationsQuery = useLocations();
   const allReservations = useMemo(
     () => reservationsQuery.data?.pages.flatMap((page) => page.reservations) ?? [],
     [reservationsQuery.data]
@@ -43,6 +50,13 @@ export default function ReservationsPage() {
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const showSuccess = useSuccessOverlay();
+
+  // The list only carries a thumbnail-sized slice of the item — the quick
+  // view needs the item's full details (location, condition, notes,
+  // creator), so fetch those lazily only once a reservation is tapped.
+  const quickViewItemQuery = useItem(quickViewReservation?.item?.id ?? "", {
+    enabled: Boolean(quickViewReservation?.item),
+  });
 
   const sentinelRef = useLoadMoreSentinel(
     () => reservationsQuery.fetchNextPage(),
@@ -106,35 +120,55 @@ export default function ReservationsPage() {
       ) : (
         <>
           <div className="flex flex-col gap-3">
-            {reservations.map((reservation) => (
-              <Card key={reservation.id}>
-                <div className="flex items-start justify-between gap-3">
-                  {reservation.item ? (
-                    <Link
-                      href={`/items/${reservation.item.id}`}
-                      className="font-semibold text-text hover:text-primary"
-                    >
-                      {reservation.item.name}
-                    </Link>
-                  ) : (
-                    <span className="font-semibold italic text-text-faint">Material removed</span>
-                  )}
-                  <Badge
-                    label={reservation.status === "active" ? "Active" : "Cancelled"}
-                    tone={reservation.status === "active" ? "success" : "neutral"}
-                  />
+            {reservations.map((reservation) => {
+              const photo = reservation.item?.item_photos[0];
+              const photoUrl = photo ? getItemPhotoUrl(supabase, photo.storage_path) : null;
+              return (
+              <Card
+                key={reservation.id}
+                onClick={reservation.item ? () => setQuickViewReservation(reservation) : undefined}
+                className={reservation.item ? "cursor-pointer transition-shadow hover:shadow-[0_10px_28px_rgba(20,33,61,0.1)]" : undefined}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-surface-alt">
+                    {photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={photoUrl} alt="" className="h-full w-full object-contain" />
+                    ) : (
+                      <ImageOff size={16} className="text-text-faint" strokeWidth={1.75} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      {reservation.item ? (
+                        <span className="font-semibold text-text">{reservation.item.name}</span>
+                      ) : (
+                        <span className="font-semibold italic text-text-faint">Material removed</span>
+                      )}
+                      <Badge
+                        label={reservation.status === "active" ? "Active" : "Cancelled"}
+                        tone={reservation.status === "active" ? "success" : "neutral"}
+                      />
+                    </div>
+                    {reservation.item?.identification_number ? (
+                      <p className="mt-1 text-xs text-text-muted">ID: {reservation.item.identification_number}</p>
+                    ) : null}
+                    <p className="mt-1 text-xs text-text-muted">
+                      Quantity: {reservation.quantity}
+                      {reservation.item?.unit ? ` ${reservation.item.unit}` : ""}
+                    </p>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-text-muted">
+                      <CalendarClock size={13} strokeWidth={2} />
+                      {new Date(reservation.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-                {reservation.item?.identification_number ? (
-                  <p className="mt-1 text-xs text-text-muted">ID: {reservation.item.identification_number}</p>
-                ) : null}
-                <p className="mt-1 text-xs text-text-muted">Quantity: {reservation.quantity}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-text-muted">
-                  <CalendarClock size={13} strokeWidth={2} />
-                  {new Date(reservation.created_at).toLocaleDateString()}
-                </p>
                 {reservation.status === "active" ? (
                   <button
-                    onClick={() => handleCancel(reservation)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancel(reservation);
+                    }}
                     disabled={cancelReservation.isPending && cancelReservation.variables === reservation.id}
                     className="mt-2 text-xs font-bold text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline"
                   >
@@ -144,13 +178,27 @@ export default function ReservationsPage() {
                   </button>
                 ) : null}
               </Card>
-            ))}
+              );
+            })}
           </div>
           <div ref={sentinelRef} className="flex justify-center py-6">
             {reservationsQuery.isFetchingNextPage ? <StackLoader size="sm" /> : null}
           </div>
         </>
       )}
+
+      {quickViewReservation && quickViewItemQuery.data ? (
+        <ItemQuickView
+          item={quickViewItemQuery.data}
+          locations={locationsQuery.data ?? []}
+          myReservation={{ quantity: quickViewReservation.quantity, status: quickViewReservation.status }}
+          onClose={() => setQuickViewReservation(null)}
+          onViewDetails={() => {
+            router.push(`/items/${quickViewReservation.item!.id}`);
+            setQuickViewReservation(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -14,11 +14,15 @@ export function ItemQuickView({
   locations,
   onClose,
   onViewDetails,
+  myReservation,
 }: {
   item: ItemWithDetails;
   locations: Location[];
   onClose: () => void;
   onViewDetails: () => void;
+  // Shown only when opened from My Reservations — highlights what this
+  // user reserved, distinct from the item's overall availability below.
+  myReservation?: { quantity: number; status: "active" | "cancelled" };
 }) {
   const supabase = useSupabaseClient();
   const available = item.availability?.available_quantity ?? item.quantity;
@@ -74,6 +78,21 @@ export function ItemQuickView({
               tone={available > 0 ? "success" : "danger"}
             />
           </div>
+
+          {myReservation ? (
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-sm border border-primary bg-primary-soft px-3 py-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary-dark">Your reservation</p>
+                <p className="font-display text-base font-black text-primary-dark">
+                  {formatQuantity(myReservation.quantity, item.unit, false)}
+                </p>
+              </div>
+              <Badge
+                label={myReservation.status === "active" ? "Active" : "Cancelled"}
+                tone={myReservation.status === "active" ? "success" : "neutral"}
+              />
+            </div>
+          ) : null}
 
           <div className="mb-3 flex flex-col gap-1.5">
             {item.identification_number ? (

@@ -1,24 +1,30 @@
 import {
   getFriendlyErrorMessage,
+  getItemPhotoUrl,
   useCancelReservation,
+  useItem,
+  useLocations,
   useMyReservationsInfinite,
+  useSupabaseClient,
   type ReservationWithDetails,
 } from "@ghella/shared";
+import { Image } from "expo-image";
 import { router } from "expo-router";
-import { CalendarClock, PackageOpen, PackageSearch } from "lucide-react-native";
+import { CalendarClock, ImageOff, PackageOpen, PackageSearch } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge } from "../../src/components/Badge";
 import { Card } from "../../src/components/Card";
 import { useConfirm } from "../../src/components/ConfirmDialog";
 import { EmptyState } from "../../src/components/EmptyState";
+import { ItemQuickView } from "../../src/components/ItemQuickView";
 import { PageHeading } from "../../src/components/PageHeading";
 import { Screen } from "../../src/components/Screen";
 import { StackLoader } from "../../src/components/StackLoader";
 import { useSuccessOverlay } from "../../src/components/SuccessOverlay";
 import { ThemedRefreshControl } from "../../src/components/ThemedRefreshControl";
 import { useToast } from "../../src/components/Toast";
-import { colors, fonts, spacing, typography } from "../../src/lib/theme";
+import { colors, fonts, radius, spacing, typography } from "../../src/lib/theme";
 
 type StatusFilter = "all" | "active" | "cancelled";
 const STATUS_TABS: { value: StatusFilter; label: string }[] = [
@@ -28,8 +34,11 @@ const STATUS_TABS: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function MyReservationsScreen() {
+  const supabase = useSupabaseClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [quickViewReservation, setQuickViewReservation] = useState<ReservationWithDetails | null>(null);
   const reservationsQuery = useMyReservationsInfinite();
+  const locationsQuery = useLocations();
   const cancelReservation = useCancelReservation();
   const confirmDialog = useConfirm();
   const showToast = useToast();
@@ -42,6 +51,13 @@ export default function MyReservationsScreen() {
     () => (statusFilter === "all" ? allReservations : allReservations.filter((r) => r.status === statusFilter)),
     [allReservations, statusFilter]
   );
+
+  // The list only carries a thumbnail-sized slice of the item — the quick
+  // view needs the item's full details (location, condition, notes,
+  // creator), so fetch those lazily only once a reservation is tapped.
+  const quickViewItemQuery = useItem(quickViewReservation?.item?.id ?? "", {
+    enabled: Boolean(quickViewReservation?.item),
+  });
 
   const handleCancel = async (reservation: ReservationWithDetails) => {
     const confirmed = await confirmDialog({
@@ -112,29 +128,46 @@ export default function MyReservationsScreen() {
               </View>
             ) : null
           }
-          renderItem={({ item: reservation }) => (
+          renderItem={({ item: reservation }) => {
+            const photo = reservation.item?.item_photos[0];
+            const photoUrl = photo ? getItemPhotoUrl(supabase, photo.storage_path) : null;
+            return (
             <Card
               style={styles.card}
-              onPress={reservation.item ? () => router.push(`/item/${reservation.item!.id}`) : undefined}
+              onPress={reservation.item ? () => setQuickViewReservation(reservation) : undefined}
             >
-              <View style={styles.cardHeader}>
-                <Text style={[styles.itemName, !reservation.item && styles.itemNameRemoved]}>
-                  {reservation.item?.name ?? "Material removed"}
-                </Text>
-                <Badge
-                  label={reservation.status === "active" ? "Active" : "Cancelled"}
-                  tone={reservation.status === "active" ? "success" : "neutral"}
-                />
-              </View>
-              {reservation.item?.identification_number ? (
-                <Text style={styles.meta}>ID: {reservation.item.identification_number}</Text>
-              ) : null}
-              <Text style={styles.meta}>Quantity: {reservation.quantity}</Text>
-              <View style={styles.dateRow}>
-                <CalendarClock size={13} color={colors.textFaint} strokeWidth={2} />
-                <Text style={styles.meta}>
-                  {new Date(reservation.created_at).toLocaleDateString()}
-                </Text>
+              <View style={styles.cardTop}>
+                <View style={styles.thumb}>
+                  {photoUrl ? (
+                    <Image source={{ uri: photoUrl }} style={styles.thumbImage} contentFit="contain" />
+                  ) : (
+                    <ImageOff size={16} color={colors.textFaint} strokeWidth={1.75} />
+                  )}
+                </View>
+                <View style={styles.cardInfo}>
+                  <View style={styles.cardHeader}>
+                    <Text style={[styles.itemName, !reservation.item && styles.itemNameRemoved]}>
+                      {reservation.item?.name ?? "Material removed"}
+                    </Text>
+                    <Badge
+                      label={reservation.status === "active" ? "Active" : "Cancelled"}
+                      tone={reservation.status === "active" ? "success" : "neutral"}
+                    />
+                  </View>
+                  {reservation.item?.identification_number ? (
+                    <Text style={styles.meta}>ID: {reservation.item.identification_number}</Text>
+                  ) : null}
+                  <Text style={styles.meta}>
+                    Quantity: {reservation.quantity}
+                    {reservation.item?.unit ? ` ${reservation.item.unit}` : ""}
+                  </Text>
+                  <View style={styles.dateRow}>
+                    <CalendarClock size={13} color={colors.textFaint} strokeWidth={2} />
+                    <Text style={styles.meta}>
+                      {new Date(reservation.created_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </View>
               </View>
               {reservation.status === "active" ? (
                 <Pressable
@@ -158,9 +191,24 @@ export default function MyReservationsScreen() {
                 </Pressable>
               ) : null}
             </Card>
-          )}
+            );
+          }}
         />
       )}
+
+      <ItemQuickView
+        item={quickViewItemQuery.data ?? null}
+        locations={locationsQuery.data ?? []}
+        visible={Boolean(quickViewReservation)}
+        myReservation={
+          quickViewReservation ? { quantity: quickViewReservation.quantity, status: quickViewReservation.status } : undefined
+        }
+        onClose={() => setQuickViewReservation(null)}
+        onViewDetails={() => {
+          if (quickViewReservation?.item) router.push(`/item/${quickViewReservation.item.id}`);
+          setQuickViewReservation(null);
+        }}
+      />
     </Screen>
   );
 }
@@ -192,6 +240,18 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg },
   footer: { paddingVertical: spacing.lg },
   card: { marginBottom: spacing.sm + 2 },
+  cardTop: { flexDirection: "row", gap: spacing.sm + 2 },
+  thumb: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  thumbImage: { width: "100%", height: "100%" },
+  cardInfo: { flex: 1, minWidth: 0 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
   itemName: { ...typography.subtitle, color: colors.text, flexShrink: 1 },
   itemNameRemoved: { color: colors.textFaint, fontStyle: "italic" },

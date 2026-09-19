@@ -5,7 +5,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { Badge } from "./Badge";
 import { Button } from "./Button";
 import { LocationBreadcrumb } from "./LocationBreadcrumb";
-import { colors, radius, shadow, spacing, typography } from "../lib/theme";
+import { colors, fonts, radius, shadow, spacing, typography } from "../lib/theme";
 
 // A press-and-hold "peek" at an item's fuller details without leaving
 // Browse — mirrors holding a photo in a gallery app. Read-only (no reserve
@@ -16,12 +16,16 @@ export function ItemQuickView({
   visible,
   onClose,
   onViewDetails,
+  myReservation,
 }: {
   item: ItemWithDetails | null;
   locations: Location[];
   visible: boolean;
   onClose: () => void;
   onViewDetails: () => void;
+  // Shown only when opened from My Reservations — highlights what this
+  // user reserved, distinct from the item's overall availability below.
+  myReservation?: { quantity: number; status: "active" | "cancelled" };
 }) {
   const supabase = useSupabaseClient();
   if (!item) return null;
@@ -63,6 +67,21 @@ export function ItemQuickView({
                   tone={available > 0 ? "success" : "danger"}
                 />
               </View>
+
+              {myReservation ? (
+                <View style={styles.reservationCard}>
+                  <View>
+                    <Text style={styles.reservationLabel}>Your reservation</Text>
+                    <Text style={styles.reservationValue}>
+                      {formatQuantity(myReservation.quantity, item.unit, false)}
+                    </Text>
+                  </View>
+                  <Badge
+                    label={myReservation.status === "active" ? "Active" : "Cancelled"}
+                    tone={myReservation.status === "active" ? "success" : "neutral"}
+                  />
+                </View>
+              ) : null}
 
               {item.identification_number ? (
                 <View style={styles.metaRow}>
@@ -148,6 +167,21 @@ const styles = StyleSheet.create({
   body: { padding: spacing.md },
   titleRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm, marginBottom: spacing.sm },
   name: { ...typography.title, color: colors.text, flexShrink: 1 },
+  reservationCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  reservationLabel: { ...typography.caption, fontSize: 10, color: colors.primaryDark, textTransform: "uppercase" },
+  reservationValue: { fontFamily: fonts.display, fontSize: 17, color: colors.primaryDark, marginTop: 1 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
   metaText: { ...typography.body, fontSize: 13, color: colors.textMuted },
   notes: { ...typography.body, color: colors.text, marginTop: spacing.xs, marginBottom: spacing.sm, lineHeight: 20 },

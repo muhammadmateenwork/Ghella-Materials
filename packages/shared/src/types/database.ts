@@ -278,6 +278,6 @@ export type ItemWithDetails = Item & {
 export type ReservationWithDetails = Reservation & {
   // null when the material or user was since deleted — the reservation
   // itself still exists as history.
-  item: Pick<Item, "id" | "name" | "identification_number"> | null;
+  item: (Pick<Item, "id" | "name" | "identification_number" | "unit"> & { item_photos: Pick<ItemPhoto, "storage_path">[] }) | null;
   user: Pick<Profile, "id" | "name" | "email"> | null;
 };

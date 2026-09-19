@@ -4,7 +4,7 @@ import type { Reservation, ReservationWithDetails } from "../types/database";
 import { queryKeys } from "./keys";
 
 const RESERVATION_WITH_DETAILS_SELECT =
-  "*, item:items(id, name, identification_number), user:profiles(id, name, email)";
+  "*, item:items(id, name, identification_number, unit, item_photos(storage_path)), user:profiles(id, name, email)";
 
 export const RESERVATIONS_PAGE_SIZE = 20;
 
