@@ -1,12 +1,13 @@
-import { formatQuantity, getFriendlyErrorMessage, reservationsToCsv, useCancelReservation, useItemReservations } from "@ghella/shared";
+import { formatQuantity, getFriendlyErrorMessage, reservationsToXlsx, useCancelReservation, useItemReservations } from "@ghella/shared";
 import { ClipboardList, Download, Mail, MessageSquare, X } from "lucide-react-native";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Card } from "./Card";
 import { useConfirm } from "./ConfirmDialog";
 import { EmptyState } from "./EmptyState";
 import { StackLoader } from "./StackLoader";
 import { useToast } from "./Toast";
-import { shareCsv } from "../lib/exportCsv";
+import { shareXlsx } from "../lib/exportFile";
 import { colors, fonts, radius, spacing, typography } from "../lib/theme";
 
 export function ItemReservationsList({
@@ -30,6 +31,7 @@ export function ItemReservationsList({
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const reservations = reservationsQuery.data ?? [];
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleCancel = async (reservationId: string, reserverName: string) => {
     const confirmed = await confirmDialog({
@@ -57,10 +59,14 @@ export function ItemReservationsList({
   }
 
   const handleExport = async () => {
+    setIsExporting(true);
     try {
-      await shareCsv(`${itemName}-reservations`, reservationsToCsv(itemName, reservations));
+      const workbook = await reservationsToXlsx(itemName, reservations);
+      await shareXlsx(`${itemName}-reservations`, workbook);
     } catch (err) {
       showToast(getFriendlyErrorMessage(err), "error");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -68,9 +74,9 @@ export function ItemReservationsList({
     <View style={styles.section}>
       <View style={styles.headingRow}>
         <Text style={styles.heading}>Reservations on this material ({reservations.length})</Text>
-        <Pressable onPress={handleExport} hitSlop={8} style={styles.exportLink}>
+        <Pressable onPress={handleExport} disabled={isExporting} hitSlop={8} style={styles.exportLink}>
           <Download size={13} color={colors.textMuted} strokeWidth={2} />
-          <Text style={styles.exportLinkText}>Export CSV</Text>
+          <Text style={styles.exportLinkText}>{isExporting ? "Preparing…" : "Export Excel"}</Text>
         </Pressable>
       </View>
       <View style={styles.list}>

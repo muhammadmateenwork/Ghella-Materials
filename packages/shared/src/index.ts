@@ -1,5 +1,5 @@
 export * from "./types/database";
-export * from "./lib/csvExport";
+export * from "./lib/exportData";
 export * from "./lib/errors";
 export * from "./lib/locationTree";
 export * from "./lib/quantity";

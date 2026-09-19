@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
+    "write-excel-file": "^4.1.1",
     "zod": "^4.6.1"
   },
   "peerDependencies": {

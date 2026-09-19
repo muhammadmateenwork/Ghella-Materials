@@ -1,8 +1,9 @@
 "use client";
 
-import { formatQuantity, getFriendlyErrorMessage, reservationsToCsv, useCancelReservation, useItemReservations } from "@ghella/shared";
+import { formatQuantity, getFriendlyErrorMessage, reservationsToXlsx, useCancelReservation, useItemReservations } from "@ghella/shared";
 import { ClipboardList, Download, Mail, MessageSquare, X } from "lucide-react";
-import { downloadCsv } from "../lib/downloadCsv";
+import { useState } from "react";
+import { downloadBlob } from "../lib/downloadBlob";
 import { useConfirm } from "./ConfirmDialog";
 import { EmptyState } from "./EmptyState";
 import { StackLoader } from "./StackLoader";
@@ -29,6 +30,19 @@ export function ItemReservationsList({
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const reservations = reservationsQuery.data ?? [];
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const workbook = await reservationsToXlsx(itemName, reservations);
+      downloadBlob(`${itemName}-reservations.xlsx`, workbook);
+    } catch (err) {
+      showToast(`Couldn't export: ${getFriendlyErrorMessage(err)}`, "error");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleCancel = async (reservationId: string, reserverName: string) => {
     const confirmed = await confirmDialog({
@@ -71,10 +85,11 @@ export function ItemReservationsList({
         </p>
         <button
           type="button"
-          onClick={() => downloadCsv(`${itemName}-reservations.csv`, reservationsToCsv(itemName, reservations))}
-          className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-text"
+          onClick={handleExport}
+          disabled={isExporting}
+          className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Download size={13} strokeWidth={2} /> Export CSV
+          <Download size={13} strokeWidth={2} /> {isExporting ? "Preparing…" : "Export Excel"}
         </button>
       </div>
       <div className="flex flex-col gap-3">

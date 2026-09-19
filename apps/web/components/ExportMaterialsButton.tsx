@@ -3,7 +3,7 @@
 import {
   fetchItemsForExport,
   getFriendlyErrorMessage,
-  itemsToCsv,
+  itemsToXlsx,
   useLocations,
   useSupabaseClient,
   type ExportReservationStatus,
@@ -11,7 +11,7 @@ import {
 import { Download, X } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { downloadCsv } from "../lib/downloadCsv";
+import { downloadBlob } from "../lib/downloadBlob";
 import { useToast } from "./Toast";
 
 const STATUS_OPTIONS: { value: ExportReservationStatus; label: string }[] = [
@@ -46,9 +46,9 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
         showToast("No materials match those filters.", "error");
         return;
       }
-      const csv = itemsToCsv(items, locationsQuery.data ?? [], includeDetails);
+      const workbook = await itemsToXlsx(items, locationsQuery.data ?? [], includeDetails);
       const stamp = new Date().toISOString().slice(0, 10);
-      downloadCsv(`ghella-materials-${stamp}.csv`, csv);
+      downloadBlob(`ghella-materials-${stamp}.xlsx`, workbook);
       setOpen(false);
     } catch (err) {
       showToast(`Couldn't export: ${getFriendlyErrorMessage(err)}`, "error");
@@ -64,7 +64,7 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
         onClick={() => setOpen(true)}
         className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-2 text-xs font-bold uppercase tracking-wide text-text-muted transition-colors hover:bg-surface-alt hover:text-text"
       >
-        <Download size={14} strokeWidth={2} /> Export CSV
+        <Download size={14} strokeWidth={2} /> Export Excel
       </button>
 
       {open
@@ -75,7 +75,7 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-lg font-black uppercase tracking-tight text-text">Export CSV</h3>
+              <h3 className="font-display text-lg font-black uppercase tracking-tight text-text">Export Excel</h3>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="text-text-faint hover:text-text">
                 <X size={18} strokeWidth={2} />
               </button>
@@ -145,7 +145,7 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
               className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary py-2.5 text-sm font-bold uppercase tracking-wide text-primary-text transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Download size={15} strokeWidth={2} />
-              {isExporting ? "Preparing…" : "Download CSV"}
+              {isExporting ? "Preparing…" : "Download Excel"}
             </button>
           </div>
             </div>,

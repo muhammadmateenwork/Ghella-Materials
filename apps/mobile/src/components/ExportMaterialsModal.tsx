@@ -1,7 +1,7 @@
 import {
   fetchItemsForExport,
   getFriendlyErrorMessage,
-  itemsToCsv,
+  itemsToXlsx,
   useLocations,
   useSupabaseClient,
   type ExportReservationStatus,
@@ -12,7 +12,7 @@ import { Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { Button } from "./Button";
 import { TextField } from "./TextField";
 import { useToast } from "./Toast";
-import { shareCsv } from "../lib/exportCsv";
+import { shareXlsx } from "../lib/exportFile";
 import { colors, radius, shadow, spacing, typography } from "../lib/theme";
 
 const STATUS_OPTIONS: { value: ExportReservationStatus; label: string }[] = [
@@ -54,8 +54,8 @@ export function ExportMaterialsModal({
         showToast("No materials match those filters.", "error");
         return;
       }
-      const csv = itemsToCsv(items, locationsQuery.data ?? [], includeDetails);
-      await shareCsv("ghella-materials", csv);
+      const workbook = await itemsToXlsx(items, locationsQuery.data ?? [], includeDetails);
+      await shareXlsx("ghella-materials", workbook);
       onClose();
     } catch (err) {
       showToast(`Couldn't export: ${getFriendlyErrorMessage(err)}`, "error");
@@ -69,7 +69,7 @@ export function ExportMaterialsModal({
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
           <View style={styles.header}>
-            <Text style={styles.title}>Export CSV</Text>
+            <Text style={styles.title}>Export Excel</Text>
             <Pressable onPress={onClose} hitSlop={8}>
               <X size={18} color={colors.textFaint} strokeWidth={2} />
             </Pressable>
@@ -109,7 +109,7 @@ export function ExportMaterialsModal({
             />
           </View>
 
-          <Button title="Export CSV" icon={Download} onPress={handleExport} loading={isExporting} style={styles.exportButton} />
+          <Button title="Export Excel" icon={Download} onPress={handleExport} loading={isExporting} style={styles.exportButton} />
         </Pressable>
       </Pressable>
     </Modal>
