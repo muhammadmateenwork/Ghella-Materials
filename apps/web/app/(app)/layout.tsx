@@ -50,7 +50,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-1 bg-background">
+    <div className="flex min-h-dvh flex-1 bg-background">
       {/* position: fixed rather than sticky — pinned to the viewport
           unconditionally, so it can never be dragged along by a scroll no
           matter what an ancestor's height/overflow does. The content
@@ -97,7 +97,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex min-w-0 min-h-screen flex-1 flex-col md:ml-64">
+      <div className="flex min-w-0 min-h-dvh flex-1 flex-col md:ml-64">
         <main className="min-w-0 flex-1 p-4 pb-24 md:p-8 md:pb-8">
           <div key={pathname} className="page-transition mx-auto w-full max-w-5xl">
             {children}

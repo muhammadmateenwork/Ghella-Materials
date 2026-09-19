@@ -24,7 +24,7 @@ import { Screen } from "../../src/components/Screen";
 import { StackLoader } from "../../src/components/StackLoader";
 import { ThemedRefreshControl } from "../../src/components/ThemedRefreshControl";
 import { useToast } from "../../src/components/Toast";
-import { colors, radius, shadow, spacing } from "../../src/lib/theme";
+import { colors, radius, shadow, spacing, typography } from "../../src/lib/theme";
 
 export default function BrowseScreen() {
   const { location: locationParam } = useLocalSearchParams<{ location?: string }>();
@@ -174,7 +174,8 @@ export default function BrowseScreen() {
           onPress={() => router.push("/(tabs)/admin/items/new")}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         >
-          <Plus size={26} color={colors.primaryText} strokeWidth={2.5} />
+          <Plus size={20} color={colors.primaryText} strokeWidth={2.5} />
+          <Text style={styles.fabText}>Add Material</Text>
         </Pressable>
       ) : null}
 
@@ -218,13 +219,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: spacing.md,
     bottom: spacing.lg,
-    width: 56,
-    height: 56,
+    height: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingLeft: spacing.sm + 4,
+    paddingRight: spacing.md + 2,
     borderRadius: radius.full,
     backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
     ...shadow.lg,
   },
   fabPressed: { transform: [{ scale: 0.95 }] },
+  fabText: { ...typography.captionStrong, fontSize: 13, color: colors.primaryText, textTransform: "uppercase", letterSpacing: 0.4 },
 });
