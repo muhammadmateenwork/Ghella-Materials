@@ -4,11 +4,13 @@ import {
   buildLocationTree,
   filterLocationTree,
   getAllTreeIds,
+  getFriendlyErrorMessage,
   getLocationPath,
+  useCreateLocation,
   type Location,
   type LocationTreeNode,
 } from "@ghella/shared";
-import { Check, ChevronRight, MapPin, Search, X } from "lucide-react";
+import { Check, ChevronRight, MapPin, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export function LocationTreePicker({
@@ -27,6 +29,11 @@ export function LocationTreePicker({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [isAdding, setIsAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newParentId, setNewParentId] = useState("");
+  const [addError, setAddError] = useState<string | null>(null);
+  const createLocation = useCreateLocation();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const tree = useMemo(() => buildLocationTree(locations), [locations]);
@@ -52,7 +59,10 @@ export function LocationTreePicker({
   }, [open]);
 
   useEffect(() => {
-    if (!open) setSearch("");
+    if (!open) {
+      setSearch("");
+      setIsAdding(false);
+    }
   }, [open]);
 
   const toggleExpanded = (id: string) => {
@@ -62,6 +72,33 @@ export function LocationTreePicker({
       else next.add(id);
       return next;
     });
+  };
+
+  const flatLocations = useMemo(
+    () =>
+      [...locations].sort((a, b) => getLocationPath(locations, a.id).localeCompare(getLocationPath(locations, b.id))),
+    [locations]
+  );
+
+  const handleAddLocation = () => {
+    if (!newName.trim()) {
+      setAddError("Name is required");
+      return;
+    }
+    setAddError(null);
+    createLocation.mutate(
+      { name: newName.trim(), parent_location_id: newParentId || null },
+      {
+        onSuccess: (created) => {
+          onChange(created.id);
+          setNewName("");
+          setNewParentId("");
+          setIsAdding(false);
+          setOpen(false);
+        },
+        onError: (err) => setAddError(getFriendlyErrorMessage(err)),
+      }
+    );
   };
 
   return (
@@ -83,41 +120,96 @@ export function LocationTreePicker({
 
         {open ? (
           <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-sm border border-border bg-surface shadow-[0_8px_24px_rgba(15,27,45,0.14)]">
-            <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
-              <Search size={15} className="text-text-faint" strokeWidth={2} />
-              <input
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search locations"
-                className="flex-1 bg-transparent text-base text-text outline-none placeholder:text-text-faint"
-              />
-              {search ? (
-                <button type="button" onClick={() => setSearch("")} className="text-text-faint hover:text-text">
-                  <X size={14} strokeWidth={2} />
-                </button>
-              ) : null}
-            </div>
-            <div className="max-h-72 overflow-y-auto py-1">
-              {visibleTree.length === 0 ? (
-                <p className="px-3.5 py-3 text-sm text-text-muted">No locations match.</p>
-              ) : (
-                visibleTree.map((node) => (
-                  <TreeRow
-                    key={node.location.id}
-                    node={node}
-                    depth={0}
-                    value={value}
-                    expandedIds={autoExpanded}
-                    onToggle={toggleExpanded}
-                    onSelect={(id) => {
-                      onChange(id);
-                      setOpen(false);
+            {isAdding ? (
+              <div className="p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">New location</p>
+                <input
+                  autoFocus
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Location name"
+                  className="mb-2 w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                />
+                <select
+                  value={newParentId}
+                  onChange={(e) => setNewParentId(e.target.value)}
+                  className="mb-2 w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                >
+                  <option value="">No parent (top-level yard)</option>
+                  {flatLocations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {getLocationPath(locations, loc.id)}
+                    </option>
+                  ))}
+                </select>
+                {addError ? <p className="mb-2 text-xs font-semibold text-danger">{addError}</p> : null}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddLocation}
+                    disabled={createLocation.isPending}
+                    className="flex-1 rounded-sm bg-primary py-2 text-xs font-bold uppercase tracking-wide text-primary-text transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {createLocation.isPending ? "Adding…" : "Add location"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAdding(false);
+                      setAddError(null);
                     }}
+                    className="rounded-sm border border-border px-3 py-2 text-xs font-bold uppercase tracking-wide text-text-muted hover:bg-surface-alt"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+                  <Search size={15} className="text-text-faint" strokeWidth={2} />
+                  <input
+                    autoFocus
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search locations"
+                    className="flex-1 bg-transparent text-base text-text outline-none placeholder:text-text-faint"
                   />
-                ))
-              )}
-            </div>
+                  {search ? (
+                    <button type="button" onClick={() => setSearch("")} className="text-text-faint hover:text-text">
+                      <X size={14} strokeWidth={2} />
+                    </button>
+                  ) : null}
+                </div>
+                <div className="max-h-72 overflow-y-auto py-1">
+                  {visibleTree.length === 0 ? (
+                    <p className="px-3.5 py-3 text-sm text-text-muted">No locations match.</p>
+                  ) : (
+                    visibleTree.map((node) => (
+                      <TreeRow
+                        key={node.location.id}
+                        node={node}
+                        depth={0}
+                        value={value}
+                        expandedIds={autoExpanded}
+                        onToggle={toggleExpanded}
+                        onSelect={(id) => {
+                          onChange(id);
+                          setOpen(false);
+                        }}
+                      />
+                    ))
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAdding(true)}
+                  className="flex w-full items-center gap-2 border-t border-border px-3.5 py-2.5 text-left text-sm font-semibold text-primary hover:bg-surface-alt"
+                >
+                  <Plus size={15} strokeWidth={2.25} /> Add new location
+                </button>
+              </>
+            )}
           </div>
         ) : null}
       </div>

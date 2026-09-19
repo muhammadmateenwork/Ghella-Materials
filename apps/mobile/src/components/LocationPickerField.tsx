@@ -3,14 +3,18 @@ import {
   filterLocationTree,
   flattenVisibleTree,
   getAllTreeIds,
+  getFriendlyErrorMessage,
   getLocationPath,
+  useCreateLocation,
   type FlatLocationRow,
   type Location,
 } from "@ghella/shared";
-import { Check, ChevronRight, MapPin, Search, X } from "lucide-react-native";
+import { Check, ChevronRight, MapPin, Plus, Search, X } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Button } from "./Button";
+import { TextField } from "./TextField";
 import { colors, fonts, radius, spacing, typography } from "../lib/theme";
 
 export function LocationPickerField({
@@ -29,7 +33,17 @@ export function LocationPickerField({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [isAdding, setIsAdding] = useState(false);
+  const [pickingParent, setPickingParent] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newParentId, setNewParentId] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | undefined>();
+  const createLocation = useCreateLocation();
   const selectedLabel = value ? getLocationPath(locations, value) : "Select a location";
+  const flatLocations = useMemo(
+    () => [...locations].sort((a, b) => getLocationPath(locations, a.id).localeCompare(getLocationPath(locations, b.id))),
+    [locations]
+  );
 
   const tree = useMemo(() => buildLocationTree(locations), [locations]);
   const searching = search.trim().length > 0;
@@ -55,6 +69,28 @@ export function LocationPickerField({
   const close = () => {
     setOpen(false);
     setSearch("");
+    setIsAdding(false);
+    setPickingParent(false);
+  };
+
+  const handleAddLocation = () => {
+    if (!newName.trim()) {
+      setAddError("Name is required");
+      return;
+    }
+    setAddError(undefined);
+    createLocation.mutate(
+      { name: newName.trim(), parent_location_id: newParentId },
+      {
+        onSuccess: (created) => {
+          onChange(created.id);
+          setNewName("");
+          setNewParentId(null);
+          close();
+        },
+        onError: (err) => setAddError(getFriendlyErrorMessage(err)),
+      }
+    );
   };
 
   return (
@@ -75,49 +111,118 @@ export function LocationPickerField({
       <Modal visible={open} animationType="slide" onRequestClose={close}>
         <SafeAreaView style={styles.modal} edges={["top", "left", "right", "bottom"]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select location</Text>
-            <Pressable onPress={close} hitSlop={8} style={styles.closeButton}>
+            <Text style={styles.modalTitle}>
+              {pickingParent ? "Parent location" : isAdding ? "New location" : "Select location"}
+            </Text>
+            <Pressable
+              onPress={() => {
+                if (pickingParent) setPickingParent(false);
+                else if (isAdding) setIsAdding(false);
+                else close();
+              }}
+              hitSlop={8}
+              style={styles.closeButton}
+            >
               <X size={18} color={colors.text} strokeWidth={2} />
             </Pressable>
           </View>
 
-          <View style={styles.searchBar}>
-            <Search size={16} color={colors.textFaint} strokeWidth={2} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search locations"
-              placeholderTextColor={colors.textFaint}
-              value={search}
-              onChangeText={setSearch}
+          {pickingParent ? (
+            <FlatList
+              data={flatLocations}
+              keyExtractor={(loc) => loc.id}
+              ListHeaderComponent={
+                <Pressable
+                  style={styles.flatRow}
+                  onPress={() => {
+                    setNewParentId(null);
+                    setPickingParent(false);
+                  }}
+                >
+                  <Text style={styles.rowText}>No parent (top-level yard)</Text>
+                  {newParentId === null ? <Check size={17} color={colors.primary} strokeWidth={2.5} /> : null}
+                </Pressable>
+              }
+              renderItem={({ item: loc }) => (
+                <Pressable
+                  style={styles.flatRow}
+                  onPress={() => {
+                    setNewParentId(loc.id);
+                    setPickingParent(false);
+                  }}
+                >
+                  <Text style={styles.rowText} numberOfLines={1}>
+                    {getLocationPath(locations, loc.id)}
+                  </Text>
+                  {newParentId === loc.id ? <Check size={17} color={colors.primary} strokeWidth={2.5} /> : null}
+                </Pressable>
+              )}
             />
-            {search ? (
-              <Pressable onPress={() => setSearch("")} hitSlop={8}>
-                <X size={15} color={colors.textFaint} strokeWidth={2} />
+          ) : isAdding ? (
+            <View style={styles.addForm}>
+              <TextField label="Location name *" value={newName} onChangeText={setNewName} error={addError} />
+              <Text style={styles.label}>Parent location</Text>
+              <Pressable style={styles.field} onPress={() => setPickingParent(true)}>
+                <MapPin size={16} color={colors.textMuted} strokeWidth={2} />
+                <Text style={[styles.fieldText, newParentId ? styles.value : styles.placeholder]} numberOfLines={1}>
+                  {newParentId ? getLocationPath(locations, newParentId) : "No parent (top-level yard)"}
+                </Text>
+                <ChevronDown />
               </Pressable>
-            ) : null}
-          </View>
-
-          <FlatList
-            data={rows}
-            keyExtractor={(row) => row.location.id}
-            renderItem={({ item: row }) => (
-              <TreeRow
-                row={row}
-                selected={value === row.location.id}
-                expanded={expandedIds.has(row.location.id)}
-                onToggle={() => toggleExpanded(row.location.id)}
-                onSelect={() => {
-                  onChange(row.location.id);
-                  close();
-                }}
+              <Button
+                title="Add location"
+                icon={Plus}
+                onPress={handleAddLocation}
+                loading={createLocation.isPending}
+                style={styles.addButton}
               />
-            )}
-            ListEmptyComponent={
-              <Text style={styles.empty}>
-                {searching ? "No locations match your search." : "No locations yet — add one under Manage Locations."}
-              </Text>
-            }
-          />
+            </View>
+          ) : (
+            <>
+              <View style={styles.searchBar}>
+                <Search size={16} color={colors.textFaint} strokeWidth={2} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search locations"
+                  placeholderTextColor={colors.textFaint}
+                  value={search}
+                  onChangeText={setSearch}
+                />
+                {search ? (
+                  <Pressable onPress={() => setSearch("")} hitSlop={8}>
+                    <X size={15} color={colors.textFaint} strokeWidth={2} />
+                  </Pressable>
+                ) : null}
+              </View>
+
+              <FlatList
+                data={rows}
+                keyExtractor={(row) => row.location.id}
+                renderItem={({ item: row }) => (
+                  <TreeRow
+                    row={row}
+                    selected={value === row.location.id}
+                    expanded={expandedIds.has(row.location.id)}
+                    onToggle={() => toggleExpanded(row.location.id)}
+                    onSelect={() => {
+                      onChange(row.location.id);
+                      close();
+                    }}
+                  />
+                )}
+                ListEmptyComponent={
+                  <Text style={styles.empty}>
+                    {searching ? "No locations match your search." : "No locations yet — add one below."}
+                  </Text>
+                }
+              />
+
+              <Pressable style={styles.addNewRow} onPress={() => setIsAdding(true)}>
+                <Plus size={16} color={colors.primary} strokeWidth={2.25} />
+                <Text style={styles.addNewText}>Add new location</Text>
+              </Pressable>
+            </>
+          )}
         </SafeAreaView>
       </Modal>
     </View>
@@ -240,4 +345,25 @@ const styles = StyleSheet.create({
   rowText: { fontSize: 16, fontFamily: fonts.body, color: colors.text, flexShrink: 1 },
   rowTextSelected: { color: colors.primary, fontFamily: fonts.bodyBold },
   empty: { padding: spacing.md, fontFamily: fonts.body, color: colors.textMuted, textAlign: "center" },
+  addNewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  addNewText: { ...typography.bodyStrong, fontSize: 15, color: colors.primary },
+  addForm: { paddingHorizontal: spacing.md },
+  addButton: { marginTop: spacing.md },
+  flatRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
 });
