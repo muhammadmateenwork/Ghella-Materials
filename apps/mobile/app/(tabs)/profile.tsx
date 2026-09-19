@@ -1,7 +1,7 @@
 import { changePasswordSchema, getFriendlyErrorMessage, useChangePassword, useProfile, useSignOut } from "@ghella/shared";
-import { KeyRound, LogOut, Shield, User } from "lucide-react-native";
+import { ChevronDown, ChevronUp, KeyRound, LogOut, Shield, User } from "lucide-react-native";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { Card } from "../../src/components/Card";
@@ -22,6 +22,7 @@ export default function ProfileScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   const handleSignOut = async () => {
     const confirmed = await confirmDialog({ title: "Sign out?", confirmLabel: "Sign out", danger: true });
@@ -43,6 +44,7 @@ export default function ProfileScreen() {
       onSuccess: () => {
         setNewPassword("");
         setConfirmPassword("");
+        setShowPasswordForm(false);
         showToast("Password updated.");
       },
       onError: (error) => showToast(`Couldn't update password: ${getFriendlyErrorMessage(error)}`, "error"),
@@ -78,28 +80,42 @@ export default function ProfileScreen() {
       </Card>
 
       <Card style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <KeyRound size={15} color={colors.text} strokeWidth={2} />
-          <Text style={styles.sectionTitle}>Change password</Text>
-        </View>
-        <PasswordField
-          label="New password *"
-          value={newPassword}
-          onChangeText={setNewPassword}
-          error={fieldErrors.password}
-        />
-        <PasswordField
-          label="Confirm new password *"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          error={fieldErrors.confirmPassword}
-        />
-        <Button
-          title="Update password"
-          variant="secondary"
-          onPress={handleChangePassword}
-          loading={changePassword.isPending}
-        />
+        <Pressable
+          style={styles.sectionHeaderRow}
+          onPress={() => setShowPasswordForm((v) => !v)}
+        >
+          <View style={styles.sectionHeader}>
+            <KeyRound size={15} color={colors.text} strokeWidth={2} />
+            <Text style={styles.sectionTitle}>Change password</Text>
+          </View>
+          {showPasswordForm ? (
+            <ChevronUp size={18} color={colors.textMuted} strokeWidth={2} />
+          ) : (
+            <ChevronDown size={18} color={colors.textMuted} strokeWidth={2} />
+          )}
+        </Pressable>
+        {showPasswordForm ? (
+          <View style={styles.passwordForm}>
+            <PasswordField
+              label="New password *"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              error={fieldErrors.password}
+            />
+            <PasswordField
+              label="Confirm new password *"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              error={fieldErrors.confirmPassword}
+            />
+            <Button
+              title="Update password"
+              variant="secondary"
+              onPress={handleChangePassword}
+              loading={changePassword.isPending}
+            />
+          </View>
+        ) : null}
       </Card>
 
       <Button
@@ -157,7 +173,9 @@ const styles = StyleSheet.create({
   rowLabel: { ...typography.caption, color: colors.textFaint },
   rowValue: { ...typography.bodyStrong, color: colors.text },
   rowDivider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: spacing.xs + 2, marginBottom: spacing.md },
+  sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: spacing.xs + 2 },
+  passwordForm: { marginTop: spacing.md },
   sectionTitle: { ...typography.subtitle, color: colors.text },
   signOut: {},
 });

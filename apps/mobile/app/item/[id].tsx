@@ -3,6 +3,7 @@ import {
   getFriendlyErrorMessage,
   getItemPhotoUrl,
   reservationFormSchema,
+  useDeleteItem,
   useItem,
   useLocations,
   useProfile,
@@ -12,7 +13,7 @@ import {
 } from "@ghella/shared";
 import { Image } from "expo-image";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import { ImageOff, Mail, PackageCheck, Tag, User } from "lucide-react-native";
+import { ImageOff, Mail, PackageCheck, Pencil, Tag, Trash2, User } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Linking,
@@ -27,12 +28,14 @@ import {
 } from "react-native";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
+import { useConfirm } from "../../src/components/ConfirmDialog";
 import { ErrorState } from "../../src/components/ErrorState";
 import { LocationBreadcrumb } from "../../src/components/LocationBreadcrumb";
 import { Screen } from "../../src/components/Screen";
 import { StackLoader } from "../../src/components/StackLoader";
 import { useSuccessOverlay } from "../../src/components/SuccessOverlay";
 import { TextField } from "../../src/components/TextField";
+import { useToast } from "../../src/components/Toast";
 import { colors, fonts, radius, shadow, spacing, typography } from "../../src/lib/theme";
 
 export default function ItemDetailScreen() {
@@ -40,10 +43,13 @@ export default function ItemDetailScreen() {
   const router = useRouter();
   const supabase = useSupabaseClient();
   const { session, isLoading: isSessionLoading } = useSession();
-  const { profile } = useProfile();
+  const { profile, isMaxTier } = useProfile();
   const itemQuery = useItem(id, { enabled: !isSessionLoading && Boolean(session) });
   const locationsQuery = useLocations();
   const reserveItem = useReserveItem();
+  const deleteItem = useDeleteItem();
+  const confirmDialog = useConfirm();
+  const showToast = useToast();
   const showSuccess = useSuccessOverlay();
   const { width } = useWindowDimensions();
 
@@ -84,6 +90,24 @@ export default function ItemDetailScreen() {
 
   const item = itemQuery.data;
   const available = item.availability?.available_quantity ?? item.quantity;
+  const isOwner = isMaxTier && item.created_by === profile?.id;
+
+  const handleDelete = async () => {
+    const confirmed = await confirmDialog({
+      title: "Delete this material?",
+      message: "This removes the item, its photos, and cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) return;
+    deleteItem.mutate(item.id, {
+      onSuccess: () => {
+        showToast("Item deleted.");
+        router.back();
+      },
+      onError: (error) => showToast(`Couldn't delete item: ${getFriendlyErrorMessage(error)}`, "error"),
+    });
+  };
 
   const handleReserve = () => {
     setFormError(null);
@@ -163,10 +187,33 @@ export default function ItemDetailScreen() {
       <View style={styles.body}>
         <View style={styles.titleRow}>
           <Text style={styles.name}>{item.name}</Text>
-          <Badge
-            label={`${formatQuantity(available, null, false)} of ${formatQuantity(item.quantity, item.unit, item.is_approximate)} available`}
-            tone={available > 0 ? "success" : "danger"}
-          />
+          <View style={styles.titleMetaRow}>
+            <Badge
+              label={`${formatQuantity(available, null, false)} of ${formatQuantity(item.quantity, item.unit, item.is_approximate)} available`}
+              tone={available > 0 ? "success" : "danger"}
+            />
+            {isOwner ? (
+              <View style={styles.ownerActions}>
+                <Pressable
+                  onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}
+                  style={styles.ownerButton}
+                  hitSlop={8}
+                  accessibilityLabel="Edit material"
+                >
+                  <Pencil size={15} color={colors.textMuted} strokeWidth={2} />
+                </Pressable>
+                <Pressable
+                  onPress={handleDelete}
+                  disabled={deleteItem.isPending}
+                  style={styles.ownerButton}
+                  hitSlop={8}
+                  accessibilityLabel="Delete material"
+                >
+                  <Trash2 size={15} color={colors.danger} strokeWidth={2} />
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
         </View>
 
         <View style={styles.metaList}>
@@ -279,6 +326,17 @@ const styles = StyleSheet.create({
   body: { padding: spacing.md },
   titleRow: { gap: spacing.sm, marginBottom: spacing.md },
   name: { ...typography.display, color: colors.text },
+  titleMetaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  ownerActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  ownerButton: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   metaList: { gap: spacing.xs + 2, marginBottom: spacing.sm },
   metaRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs + 2 },
   metaText: { ...typography.body, color: colors.textMuted },

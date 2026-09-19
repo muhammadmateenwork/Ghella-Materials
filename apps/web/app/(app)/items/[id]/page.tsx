@@ -5,31 +5,37 @@ import {
   getFriendlyErrorMessage,
   getItemPhotoUrl,
   reservationFormSchema,
+  useDeleteItem,
   useItem,
   useLocations,
   useProfile,
   useReserveItem,
   useSupabaseClient,
 } from "@ghella/shared";
-import { ImageOff, Mail, PackageCheck, Tag, User } from "lucide-react";
+import { ImageOff, Mail, PackageCheck, Pencil, Tag, Trash2, User } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge } from "../../../../components/Badge";
 import { Button } from "../../../../components/Button";
+import { useConfirm } from "../../../../components/ConfirmDialog";
 import { ErrorState } from "../../../../components/ErrorState";
 import { LocationBreadcrumb } from "../../../../components/LocationBreadcrumb";
 import { StackLoader } from "../../../../components/StackLoader";
 import { useSuccessOverlay } from "../../../../components/SuccessOverlay";
 import { TextAreaField, TextField } from "../../../../components/TextField";
+import { useToast } from "../../../../components/Toast";
 
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const supabase = useSupabaseClient();
-  const { profile } = useProfile();
+  const { profile, isMaxTier } = useProfile();
   const itemQuery = useItem(id);
   const locationsQuery = useLocations();
   const reserveItem = useReserveItem();
+  const deleteItem = useDeleteItem();
+  const confirmDialog = useConfirm();
+  const showToast = useToast();
   const showSuccess = useSuccessOverlay();
 
   const [activePhoto, setActivePhoto] = useState(0);
@@ -60,6 +66,24 @@ export default function ItemDetailPage() {
   const item = itemQuery.data;
   const available = item.availability?.available_quantity ?? item.quantity;
   const photo = item.item_photos[activePhoto] ?? item.item_photos[0];
+  const isOwner = isMaxTier && item.created_by === profile?.id;
+
+  const handleDelete = async () => {
+    const confirmed = await confirmDialog({
+      title: "Delete this material?",
+      message: "This removes the item, its photos, and cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) return;
+    deleteItem.mutate(item.id, {
+      onSuccess: () => {
+        showToast(`"${item.name}" deleted.`);
+        router.push("/browse");
+      },
+      onError: (error) => showToast(`Couldn't delete item: ${getFriendlyErrorMessage(error)}`, "error"),
+    });
+  };
 
   const handleReserve = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,10 +164,33 @@ export default function ItemDetailPage() {
             <h1 className="min-w-0 font-display text-2xl font-black uppercase tracking-tight text-text">
               {item.name}
             </h1>
-            <Badge
-              label={`${formatQuantity(available, null, false)} of ${formatQuantity(item.quantity, item.unit, item.is_approximate)} available`}
-              tone={available > 0 ? "success" : "danger"}
-            />
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <Badge
+                label={`${formatQuantity(available, null, false)} of ${formatQuantity(item.quantity, item.unit, item.is_approximate)} available`}
+                tone={available > 0 ? "success" : "danger"}
+              />
+              {isOwner ? (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/admin/items/${item.id}`)}
+                    aria-label="Edit material"
+                    className="flex h-8 w-8 items-center justify-center rounded-sm border border-border text-text-faint transition-colors hover:bg-surface-alt hover:text-text"
+                  >
+                    <Pencil size={15} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleteItem.isPending}
+                    aria-label="Delete material"
+                    className="flex h-8 w-8 items-center justify-center rounded-sm border border-border text-text-faint transition-colors hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 size={15} strokeWidth={2} />
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">

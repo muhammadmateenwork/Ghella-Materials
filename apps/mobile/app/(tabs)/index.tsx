@@ -1,24 +1,41 @@
-import { getDescendantLocationIds, useItemsInfinite, useLocations } from "@ghella/shared";
+import {
+  findMatchingLocationIds,
+  getDescendantLocationIds,
+  getFriendlyErrorMessage,
+  useDeleteItem,
+  useItemsInfinite,
+  useLocations,
+  useProfile,
+  type ItemWithDetails,
+} from "@ghella/shared";
 import { router, useLocalSearchParams } from "expo-router";
-import { PackageSearch, Search } from "lucide-react-native";
+import { PackageSearch, Plus, Search } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useConfirm } from "../../src/components/ConfirmDialog";
 import { EmptyState } from "../../src/components/EmptyState";
 import { ErrorState } from "../../src/components/ErrorState";
 import { ItemCard } from "../../src/components/ItemCard";
 import { ItemCardSkeleton } from "../../src/components/Skeleton";
+import { ItemQuickView } from "../../src/components/ItemQuickView";
 import { LocationDrilldown } from "../../src/components/LocationDrilldown";
 import { PageHeading } from "../../src/components/PageHeading";
 import { Screen } from "../../src/components/Screen";
 import { StackLoader } from "../../src/components/StackLoader";
 import { ThemedRefreshControl } from "../../src/components/ThemedRefreshControl";
-import { colors, radius, spacing } from "../../src/lib/theme";
+import { useToast } from "../../src/components/Toast";
+import { colors, radius, shadow, spacing } from "../../src/lib/theme";
 
 export default function BrowseScreen() {
   const { location: locationParam } = useLocalSearchParams<{ location?: string }>();
+  const { profile, isMaxTier } = useProfile();
+  const deleteItem = useDeleteItem();
+  const confirmDialog = useConfirm();
+  const showToast = useToast();
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(locationParam ?? null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [quickViewItem, setQuickViewItem] = useState<ItemWithDetails | null>(null);
 
   // A location breadcrumb elsewhere (e.g. an item card) can deep-link here via
   // the `location` param to jump straight into that location's filter.
@@ -41,12 +58,30 @@ export default function BrowseScreen() {
         : null,
     [locations, selectedLocationId]
   );
+  const matchingLocationIds = useMemo(
+    () => findMatchingLocationIds(locations, debouncedSearch),
+    [locations, debouncedSearch]
+  );
 
   // FlatList only ever mounts the rows near the viewport (it's already a
   // "recycler view"); pairing it with a paginated query means the database
   // is never asked for the whole materials table at once either.
-  const itemsQuery = useItemsInfinite(locationIds, debouncedSearch, true);
+  const itemsQuery = useItemsInfinite(locationIds, debouncedSearch, true, undefined, matchingLocationIds);
   const items = useMemo(() => itemsQuery.data?.pages.flatMap((page) => page.items) ?? [], [itemsQuery.data]);
+
+  const handleDelete = async (item: { id: string; name: string }) => {
+    const confirmed = await confirmDialog({
+      title: "Delete this material?",
+      message: `This removes "${item.name}" and its photos. This can't be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) return;
+    deleteItem.mutate(item.id, {
+      onSuccess: () => showToast(`"${item.name}" deleted.`),
+      onError: (error) => showToast(`Couldn't delete item: ${getFriendlyErrorMessage(error)}`, "error"),
+    });
+  };
 
   return (
     <Screen padded={false}>
@@ -56,7 +91,7 @@ export default function BrowseScreen() {
           <Search size={17} color={colors.textFaint} strokeWidth={2} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name or ID number"
+            placeholder="Search name, ID, location, notes…"
             placeholderTextColor={colors.textFaint}
             value={search}
             onChangeText={setSearch}
@@ -81,23 +116,30 @@ export default function BrowseScreen() {
         <EmptyState
           icon={PackageSearch}
           title={debouncedSearch ? "No materials match your search" : "No materials recorded yet"}
-          subtitle={debouncedSearch ? "Try a different name or ID number." : undefined}
+          subtitle={debouncedSearch ? "Try a different name, ID, location, or note." : undefined}
         />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <ItemCard
-              item={item}
-              locations={locations}
-              onPress={() => router.push(`/item/${item.id}`)}
-              onNavigateLocation={(locationId) =>
-                router.push({ pathname: "/(tabs)", params: { location: locationId } })
-              }
-            />
-          )}
+          renderItem={({ item }) => {
+            const isOwner = isMaxTier && item.created_by === profile?.id;
+            return (
+              <ItemCard
+                item={item}
+                locations={locations}
+                onPress={() => router.push(`/item/${item.id}`)}
+                onLongPress={() => setQuickViewItem(item)}
+                onNavigateLocation={(locationId) =>
+                  router.push({ pathname: "/(tabs)", params: { location: locationId } })
+                }
+                isOwner={isOwner}
+                onEdit={isOwner ? () => router.push(`/(tabs)/admin/items/${item.id}/edit`) : undefined}
+                onDelete={isOwner ? () => handleDelete(item) : undefined}
+              />
+            );
+          }}
           refreshControl={
             <ThemedRefreshControl refreshing={itemsQuery.isRefetching} onRefresh={() => itemsQuery.refetch()} />
           }
@@ -116,6 +158,26 @@ export default function BrowseScreen() {
           }
         />
       )}
+
+      {isMaxTier ? (
+        <Pressable
+          onPress={() => router.push("/(tabs)/admin/items/new")}
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        >
+          <Plus size={26} color={colors.primaryText} strokeWidth={2.5} />
+        </Pressable>
+      ) : null}
+
+      <ItemQuickView
+        item={quickViewItem}
+        locations={locations}
+        visible={quickViewItem !== null}
+        onClose={() => setQuickViewItem(null)}
+        onViewDetails={() => {
+          if (quickViewItem) router.push(`/item/${quickViewItem.id}`);
+          setQuickViewItem(null);
+        }}
+      />
     </Screen>
   );
 }
@@ -142,4 +204,17 @@ const styles = StyleSheet.create({
   },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg },
   footer: { paddingVertical: spacing.lg },
+  fab: {
+    position: "absolute",
+    right: spacing.md,
+    bottom: spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadow.lg,
+  },
+  fabPressed: { transform: [{ scale: 0.95 }] },
 });

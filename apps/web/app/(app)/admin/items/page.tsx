@@ -1,7 +1,15 @@
 "use client";
 
-import { formatQuantity, getFriendlyErrorMessage, useDeleteItem, useItemsInfinite, useProfile } from "@ghella/shared";
-import { ClipboardList, Loader2, Package, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  formatQuantity,
+  getFriendlyErrorMessage,
+  getItemPhotoUrl,
+  useDeleteItem,
+  useItemsInfinite,
+  useProfile,
+  useSupabaseClient,
+} from "@ghella/shared";
+import { ClipboardList, ImageOff, Loader2, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -16,6 +24,7 @@ import { useLoadMoreSentinel } from "../../../../components/useLoadMoreSentinel"
 
 export default function AdminItemsPage() {
   const router = useRouter();
+  const supabase = useSupabaseClient();
   const { profile } = useProfile();
   const itemsQuery = useItemsInfinite(undefined, undefined, false, profile?.id);
   const deleteItem = useDeleteItem();
@@ -73,11 +82,25 @@ export default function AdminItemsPage() {
                 }}
                 className="group flex cursor-pointer items-center justify-between gap-3 rounded-sm border border-border bg-surface p-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(20,33,61,0.1)]"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-text">{item.name}</p>
-                  <p className="truncate text-xs text-text-muted">
-                    {item.location.name} · Qty {formatQuantity(item.quantity, item.unit, item.is_approximate)}
-                  </p>
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-surface-alt">
+                    {item.item_photos[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={getItemPhotoUrl(supabase, item.item_photos[0].storage_path)}
+                        alt=""
+                        className="h-full w-full object-contain"
+                      />
+                    ) : (
+                      <ImageOff size={18} className="text-text-faint" strokeWidth={1.75} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-text">{item.name}</p>
+                    <p className="truncate text-xs text-text-muted">
+                      {item.location.name} · Qty {formatQuantity(item.quantity, item.unit, item.is_approximate)}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <button

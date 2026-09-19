@@ -1,22 +1,43 @@
 "use client";
 
-import { getDescendantLocationIds, useItemsInfinite, useItemsStats, useLocations } from "@ghella/shared";
-import { Boxes, PackageCheck, PackageSearch, PackageX, Search } from "lucide-react";
+import {
+  findMatchingLocationIds,
+  getDescendantLocationIds,
+  getFriendlyErrorMessage,
+  useDeleteItem,
+  useItemsInfinite,
+  useItemsStats,
+  useLocations,
+  useProfile,
+  type ItemWithDetails,
+} from "@ghella/shared";
+import { Boxes, PackageCheck, PackageSearch, PackageX, Plus, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "../../../components/ConfirmDialog";
 import { EmptyState } from "../../../components/EmptyState";
 import { ErrorState } from "../../../components/ErrorState";
 import { ItemCard } from "../../../components/ItemCard";
 import { ItemCardSkeleton } from "../../../components/Skeleton";
+import { ItemQuickView } from "../../../components/ItemQuickView";
 import { StackLoader } from "../../../components/StackLoader";
 import { LocationDrilldown } from "../../../components/LocationDrilldown";
 import { PageTitle } from "../../../components/PageTitle";
 import { StatTile } from "../../../components/StatTile";
+import { useToast } from "../../../components/Toast";
 import { useLoadMoreSentinel } from "../../../components/useLoadMoreSentinel";
 
 export default function BrowsePage() {
+  const router = useRouter();
+  const { profile, isMaxTier } = useProfile();
+  const deleteItem = useDeleteItem();
+  const confirmDialog = useConfirm();
+  const showToast = useToast();
+
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [quickViewItem, setQuickViewItem] = useState<ItemWithDetails | null>(null);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 300);
@@ -37,8 +58,12 @@ export default function BrowsePage() {
     () => (selectedLocationId ? getDescendantLocationIds(locations, selectedLocationId) : null),
     [locations, selectedLocationId]
   );
+  const matchingLocationIds = useMemo(
+    () => findMatchingLocationIds(locations, debouncedSearch),
+    [locations, debouncedSearch]
+  );
 
-  const itemsQuery = useItemsInfinite(locationIds, debouncedSearch, true);
+  const itemsQuery = useItemsInfinite(locationIds, debouncedSearch, true, undefined, matchingLocationIds);
   const items = useMemo(() => itemsQuery.data?.pages.flatMap((page) => page.items) ?? [], [itemsQuery.data]);
   const statsQuery = useItemsStats(locationIds);
 
@@ -46,6 +71,20 @@ export default function BrowsePage() {
     () => itemsQuery.fetchNextPage(),
     Boolean(itemsQuery.hasNextPage) && !itemsQuery.isFetchingNextPage
   );
+
+  const handleDelete = async (item: { id: string; name: string }) => {
+    const confirmed = await confirmDialog({
+      title: "Delete this material?",
+      message: `This removes "${item.name}" and its photos. This can't be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) return;
+    deleteItem.mutate(item.id, {
+      onSuccess: () => showToast(`"${item.name}" deleted.`),
+      onError: (error) => showToast(`Couldn't delete item: ${getFriendlyErrorMessage(error)}`, "error"),
+    });
+  };
 
   return (
     <div>
@@ -75,7 +114,7 @@ export default function BrowsePage() {
         <Search size={17} className="text-text-faint" strokeWidth={2} />
         <input
           className="flex-1 bg-transparent text-base text-text outline-none placeholder:text-text-faint"
-          placeholder="Search by name or ID number"
+          placeholder="Search name, ID, location, notes…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -101,22 +140,55 @@ export default function BrowsePage() {
         <EmptyState
           icon={PackageSearch}
           title={debouncedSearch ? "No materials match your search" : "No materials recorded yet"}
-          subtitle={debouncedSearch ? "Try a different name or ID number." : undefined}
+          subtitle={debouncedSearch ? "Try a different name, ID, location, or note." : undefined}
         />
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {items.map((item, index) => (
-              <div key={item.id} className="card-in" style={{ animationDelay: `${Math.min(index, 11) * 35}ms` }}>
-                <ItemCard item={item} locations={locations} />
-              </div>
-            ))}
+            {items.map((item, index) => {
+              const isOwner = isMaxTier && item.created_by === profile?.id;
+              return (
+                <div key={item.id} className="card-in" style={{ animationDelay: `${Math.min(index, 11) * 35}ms` }}>
+                  <ItemCard
+                    item={item}
+                    locations={locations}
+                    isOwner={isOwner}
+                    onEdit={isOwner ? () => router.push(`/admin/items/${item.id}`) : undefined}
+                    onDelete={isOwner ? () => handleDelete(item) : undefined}
+                    onLongPress={() => setQuickViewItem(item)}
+                  />
+                </div>
+              );
+            })}
           </div>
           <div ref={sentinelRef} className="flex justify-center py-8">
             {itemsQuery.isFetchingNextPage ? <StackLoader size="sm" /> : null}
           </div>
         </>
       )}
+
+      {isMaxTier ? (
+        <button
+          type="button"
+          onClick={() => router.push("/admin/items/new")}
+          aria-label="Add material"
+          className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-text shadow-[0_4px_16px_rgba(20,33,61,0.3)] transition-transform hover:-translate-y-0.5 active:scale-95 md:bottom-8 md:right-8"
+        >
+          <Plus size={26} strokeWidth={2.5} />
+        </button>
+      ) : null}
+
+      {quickViewItem ? (
+        <ItemQuickView
+          item={quickViewItem}
+          locations={locations}
+          onClose={() => setQuickViewItem(null)}
+          onViewDetails={() => {
+            router.push(`/items/${quickViewItem.id}`);
+            setQuickViewItem(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

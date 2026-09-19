@@ -28,6 +28,23 @@ export function getDescendantLocationIds(locations: Location[], rootId: string):
   return result;
 }
 
+/** Ids of every location whose own name OR full "Yard > Container" path
+ * contains `term` — used to fold location matches into a materials search
+ * (see matchingLocationIds on useItemsInfinite), so searching "ormiston"
+ * finds materials stored anywhere under that yard even when the term
+ * appears nowhere in the item's own fields. */
+export function findMatchingLocationIds(locations: Location[], term: string): string[] {
+  const needle = term.trim().toLowerCase();
+  if (!needle) return [];
+  return locations
+    .filter(
+      (loc) =>
+        loc.name.toLowerCase().includes(needle) ||
+        getLocationPath(locations, loc.id).toLowerCase().includes(needle)
+    )
+    .map((loc) => loc.id);
+}
+
 /** Full "Yard > Container" style label by walking up parent_location_id. */
 export function getLocationPath(locations: Location[], locationId: string): string {
   const byId = new Map(locations.map((loc) => [loc.id, loc]));

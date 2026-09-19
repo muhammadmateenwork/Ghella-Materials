@@ -1,6 +1,15 @@
-import { formatQuantity, getFriendlyErrorMessage, useDeleteItem, useItemsInfinite, useProfile } from "@ghella/shared";
+import {
+  formatQuantity,
+  getFriendlyErrorMessage,
+  getItemPhotoUrl,
+  useDeleteItem,
+  useItemsInfinite,
+  useProfile,
+  useSupabaseClient,
+} from "@ghella/shared";
 import { router } from "expo-router";
-import { ClipboardList, Package, Pencil, Plus, Trash2 } from "lucide-react-native";
+import { Image } from "expo-image";
+import { ClipboardList, ImageOff, Package, Pencil, Plus, Trash2 } from "lucide-react-native";
 import { useMemo } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../../../src/components/Button";
@@ -15,6 +24,7 @@ import { useToast } from "../../../../src/components/Toast";
 import { colors, spacing, typography } from "../../../../src/lib/theme";
 
 export default function AdminItemsScreen() {
+  const supabase = useSupabaseClient();
   const { profile } = useProfile();
   const itemsQuery = useItemsInfinite(undefined, undefined, false, profile?.id);
   const deleteItem = useDeleteItem();
@@ -77,6 +87,17 @@ export default function AdminItemsScreen() {
           renderItem={({ item }) => (
             <Card style={styles.row} onPress={() => router.push(`/(tabs)/admin/items/${item.id}/edit`)}>
               <View style={styles.rowContent}>
+                {item.item_photos[0] ? (
+                  <Image
+                    source={{ uri: getItemPhotoUrl(supabase, item.item_photos[0].storage_path) }}
+                    style={styles.thumb}
+                    contentFit="contain"
+                  />
+                ) : (
+                  <View style={[styles.thumb, styles.thumbPlaceholder]}>
+                    <ImageOff size={18} color={colors.textFaint} strokeWidth={1.75} />
+                  </View>
+                )}
                 <View style={styles.rowInfo}>
                   <Text style={styles.rowName}>{item.name}</Text>
                   <Text style={styles.rowMeta}>
@@ -138,8 +159,10 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg },
   footer: { paddingVertical: spacing.lg },
   row: { marginBottom: spacing.sm },
-  rowContent: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  rowInfo: { flexShrink: 1 },
+  rowContent: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  thumb: { width: 44, height: 44, borderRadius: 6, backgroundColor: colors.surfaceAlt },
+  thumbPlaceholder: { alignItems: "center", justifyContent: "center" },
+  rowInfo: { flex: 1, minWidth: 0 },
   rowName: { ...typography.subtitle, color: colors.text },
   rowMeta: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   rowActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },

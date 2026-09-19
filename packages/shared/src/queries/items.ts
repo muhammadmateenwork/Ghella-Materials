@@ -76,12 +76,19 @@ export function useItems(locationIds?: string[] | null) {
  * used by "Manage Materials" so each maximum-tier user only sees (and can
  * only act on) their own additions. Browse omits this — every user sees
  * the full catalog regardless of who added what.
+ * @param matchingLocationIds Location ids whose name/path matches the
+ * search term (computed by the caller from the already-loaded locations
+ * list — see matchingLocationIds in lib/locationTree) — folded into the
+ * same search match as an OR, so "ormiston" finds materials stored under
+ * an Ormiston location even when the term appears nowhere in the item's
+ * own name/ID/notes/condition.
  */
 export function useItemsInfinite(
   locationIds?: string[] | null,
   search?: string,
   hideFullyReserved?: boolean,
-  ownedByUserId?: string | null
+  ownedByUserId?: string | null,
+  matchingLocationIds?: string[] | null
 ) {
   const supabase = useSupabaseClient();
   const term = search?.trim() ?? "";
@@ -93,6 +100,7 @@ export function useItemsInfinite(
       term,
       hideFullyReserved ?? false,
       ownedByUserId ?? null,
+      matchingLocationIds ?? null,
     ],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
@@ -107,7 +115,16 @@ export function useItemsInfinite(
       }
       if (term) {
         const safe = escapeForIlike(term);
-        query = query.or(`name.ilike.%${safe}%,identification_number.ilike.%${safe}%`);
+        const orParts = [
+          `name.ilike.%${safe}%`,
+          `identification_number.ilike.%${safe}%`,
+          `notes.ilike.%${safe}%`,
+          `condition.ilike.%${safe}%`,
+        ];
+        if (matchingLocationIds && matchingLocationIds.length > 0) {
+          orParts.push(`location_id.in.(${matchingLocationIds.join(",")})`);
+        }
+        query = query.or(orParts.join(","));
       }
       if (ownedByUserId) {
         query = query.or(`created_by.eq.${ownedByUserId},created_by.is.null`);

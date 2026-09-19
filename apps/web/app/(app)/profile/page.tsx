@@ -1,7 +1,7 @@
 "use client";
 
 import { changePasswordSchema, getFriendlyErrorMessage, useChangePassword, useProfile, useSignOut } from "@ghella/shared";
-import { KeyRound, LogOut, Mail, Shield } from "lucide-react";
+import { ChevronDown, ChevronUp, KeyRound, LogOut, Mail, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "../../../components/Badge";
@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   const initials = (profile?.name ?? "?")
     .split(" ")
@@ -51,6 +52,7 @@ export default function ProfilePage() {
       onSuccess: () => {
         setNewPassword("");
         setConfirmPassword("");
+        setShowPasswordForm(false);
         showToast("Password updated.");
       },
       onError: (error) => showToast(`Couldn't update password: ${getFriendlyErrorMessage(error)}`, "error"),
@@ -76,28 +78,37 @@ export default function ProfilePage() {
       </Card>
 
       <Card className="mb-6">
-        <p className="mb-4 flex items-center gap-2 text-sm font-bold text-text">
-          <KeyRound size={15} strokeWidth={2} /> Change password
-        </p>
-        <form onSubmit={handleChangePassword}>
-          <PasswordField
-            label="New password *"
-            autoComplete="new-password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            error={fieldErrors.password}
-          />
-          <PasswordField
-            label="Confirm new password *"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            error={fieldErrors.confirmPassword}
-          />
-          <Button type="submit" variant="secondary" loading={changePassword.isPending}>
-            Update password
-          </Button>
-        </form>
+        <button
+          type="button"
+          onClick={() => setShowPasswordForm((v) => !v)}
+          className="flex w-full items-center justify-between text-sm font-bold text-text"
+        >
+          <span className="flex items-center gap-2">
+            <KeyRound size={15} strokeWidth={2} /> Change password
+          </span>
+          {showPasswordForm ? <ChevronUp size={16} strokeWidth={2} /> : <ChevronDown size={16} strokeWidth={2} />}
+        </button>
+        {showPasswordForm ? (
+          <form onSubmit={handleChangePassword} className="mt-4">
+            <PasswordField
+              label="New password *"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              error={fieldErrors.password}
+            />
+            <PasswordField
+              label="Confirm new password *"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={fieldErrors.confirmPassword}
+            />
+            <Button type="submit" variant="secondary" loading={changePassword.isPending}>
+              Update password
+            </Button>
+          </form>
+        ) : null}
       </Card>
 
       <Button variant="secondary" icon={LogOut} className="w-full" loading={signOut.isPending} onClick={handleSignOut}>
