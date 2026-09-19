@@ -138,7 +138,7 @@ export default function AdminUsersPage() {
         <p className="mb-4 text-xs text-text-faint">
           They'll be emailed a link to set their own password — no password to share yourself.
         </p>
-        <form onSubmit={handleCreate}>
+        <form onSubmit={handleCreate} noValidate>
           <TextField label="Name *" value={name} onChange={(e) => setName(e.target.value)} error={fieldErrors.name} />
           <TextField
             label="Email *"

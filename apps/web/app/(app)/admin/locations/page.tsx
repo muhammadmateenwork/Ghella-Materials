@@ -131,7 +131,7 @@ export default function AdminLocationsPage() {
 
       <Card className="mb-6">
         <p className="mb-4 text-sm font-bold text-text">Add a location</p>
-        <form onSubmit={handleAdd}>
+        <form onSubmit={handleAdd} noValidate>
           <TextField label="Name *" value={name} onChange={(e) => setName(e.target.value)} error={nameError} />
           <LocationTreePicker
             label="Parent location (leave as 'No parent' for a top-level yard)"

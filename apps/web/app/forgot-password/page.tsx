@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
               Enter your account email and we&apos;ll send you a reset link.
             </p>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <TextField
                 label="Email *"
                 type="email"

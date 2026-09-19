@@ -89,7 +89,7 @@ export default function ProfilePage() {
           {showPasswordForm ? <ChevronUp size={16} strokeWidth={2} /> : <ChevronDown size={16} strokeWidth={2} />}
         </button>
         {showPasswordForm ? (
-          <form onSubmit={handleChangePassword} className="mt-4">
+          <form onSubmit={handleChangePassword} className="mt-4" noValidate>
             <PasswordField
               label="New password *"
               autoComplete="new-password"

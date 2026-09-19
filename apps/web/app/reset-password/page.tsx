@@ -142,7 +142,7 @@ export default function ResetPasswordPage() {
               </h1>
               <p className="mt-1 mb-8 text-[15px] text-text-muted">Choose a new password for your account.</p>
 
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} noValidate>
                 <PasswordField
                   label="New password *"
                   autoComplete="new-password"

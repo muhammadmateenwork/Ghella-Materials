@@ -126,7 +126,7 @@ export default function LoginPage() {
           </div>
           <p className="-mt-6 mb-8 text-[15px] text-text-muted md:mb-6">Enter the details you were given to sign in.</p>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <TextField
               label="Email *"
               type="email"
