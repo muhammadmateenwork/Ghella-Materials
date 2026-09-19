@@ -6,7 +6,7 @@ import {
 } from "@ghella/shared";
 import { router } from "expo-router";
 import { CalendarClock, PackageOpen, PackageSearch } from "lucide-react-native";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge } from "../../src/components/Badge";
 import { Card } from "../../src/components/Card";
@@ -20,15 +20,27 @@ import { ThemedRefreshControl } from "../../src/components/ThemedRefreshControl"
 import { useToast } from "../../src/components/Toast";
 import { colors, fonts, spacing, typography } from "../../src/lib/theme";
 
+type StatusFilter = "all" | "active" | "cancelled";
+const STATUS_TABS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 export default function MyReservationsScreen() {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const reservationsQuery = useMyReservationsInfinite();
   const cancelReservation = useCancelReservation();
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const showSuccess = useSuccessOverlay();
-  const reservations = useMemo(
+  const allReservations = useMemo(
     () => reservationsQuery.data?.pages.flatMap((page) => page.reservations) ?? [],
     [reservationsQuery.data]
+  );
+  const reservations = useMemo(
+    () => (statusFilter === "all" ? allReservations : allReservations.filter((r) => r.status === statusFilter)),
+    [allReservations, statusFilter]
   );
 
   const handleCancel = async (reservation: ReservationWithDetails) => {
@@ -49,14 +61,32 @@ export default function MyReservationsScreen() {
     <Screen padded={false}>
       <PageHeading style={styles.title}>My Reservations</PageHeading>
 
+      <View style={styles.tabRow}>
+        {STATUS_TABS.map((tab) => (
+          <Pressable
+            key={tab.value}
+            onPress={() => setStatusFilter(tab.value)}
+            style={[styles.tabChip, statusFilter === tab.value && styles.tabChipSelected]}
+          >
+            <Text style={[styles.tabChipText, statusFilter === tab.value && styles.tabChipTextSelected]}>
+              {tab.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       {reservationsQuery.isLoading ? (
         <StackLoader style={styles.loading} />
       ) : reservations.length === 0 ? (
         <EmptyState
           icon={PackageOpen}
-          title="Nothing reserved yet"
-          subtitle="Materials you reserve will show up here."
-          action={{ label: "Browse materials", icon: PackageSearch, onPress: () => router.push("/(tabs)") }}
+          title={statusFilter === "all" ? "Nothing reserved yet" : `No ${statusFilter} reservations`}
+          subtitle={statusFilter === "all" ? "Materials you reserve will show up here." : "Try a different filter above."}
+          action={
+            statusFilter === "all"
+              ? { label: "Browse materials", icon: PackageSearch, onPress: () => router.push("/(tabs)") }
+              : undefined
+          }
         />
       ) : (
         <FlatList
@@ -142,6 +172,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   loading: { marginTop: spacing.xl },
+  tabRow: {
+    flexDirection: "row",
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm + 2,
+  },
+  tabChip: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  tabChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  tabChipText: { ...typography.captionStrong, color: colors.textMuted },
+  tabChipTextSelected: { color: colors.primaryText },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg },
   footer: { paddingVertical: spacing.lg },
   card: { marginBottom: spacing.sm + 2 },

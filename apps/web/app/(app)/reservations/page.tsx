@@ -9,7 +9,7 @@ import {
 import { CalendarClock, PackageSearch, PackageOpen } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "../../../components/Badge";
 import { Card } from "../../../components/Card";
 import { useConfirm } from "../../../components/ConfirmDialog";
@@ -21,12 +21,23 @@ import { useSuccessOverlay } from "../../../components/SuccessOverlay";
 import { useToast } from "../../../components/Toast";
 import { useLoadMoreSentinel } from "../../../components/useLoadMoreSentinel";
 
+const STATUS_TABS: { value: "all" | "active" | "cancelled"; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 export default function ReservationsPage() {
   const router = useRouter();
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "cancelled">("all");
   const reservationsQuery = useMyReservationsInfinite();
-  const reservations = useMemo(
+  const allReservations = useMemo(
     () => reservationsQuery.data?.pages.flatMap((page) => page.reservations) ?? [],
     [reservationsQuery.data]
+  );
+  const reservations = useMemo(
+    () => (statusFilter === "all" ? allReservations : allReservations.filter((r) => r.status === statusFilter)),
+    [allReservations, statusFilter]
   );
   const cancelReservation = useCancelReservation();
   const confirmDialog = useConfirm();
@@ -56,6 +67,23 @@ export default function ReservationsPage() {
     <div>
       <PageTitle className="mb-5">My Reservations</PageTitle>
 
+      <div className="mb-5 flex flex-wrap gap-1.5">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => setStatusFilter(tab.value)}
+            className={`rounded-full border px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide transition-colors ${
+              statusFilter === tab.value
+                ? "border-primary bg-primary text-primary-text"
+                : "border-border bg-surface text-text-muted hover:bg-surface-alt"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {reservationsQuery.isLoading ? (
         <div className="flex min-h-[50vh] items-center justify-center">
           <StackLoader />
@@ -65,9 +93,15 @@ export default function ReservationsPage() {
       ) : reservations.length === 0 ? (
         <EmptyState
           icon={PackageOpen}
-          title="Nothing reserved yet"
-          subtitle="Materials you reserve will show up here."
-          action={{ label: "Browse materials", icon: PackageSearch, onClick: () => router.push("/browse") }}
+          title={statusFilter === "all" ? "Nothing reserved yet" : `No ${statusFilter} reservations`}
+          subtitle={
+            statusFilter === "all" ? "Materials you reserve will show up here." : "Try a different filter above."
+          }
+          action={
+            statusFilter === "all"
+              ? { label: "Browse materials", icon: PackageSearch, onClick: () => router.push("/browse") }
+              : undefined
+          }
         />
       ) : (
         <>
