@@ -249,7 +249,10 @@ export default function ItemDetailPage() {
                 max={available}
                 step={allowDecimal ? "any" : 1}
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => setQuantity(allowDecimal ? e.target.value : e.target.value.replace(/[.,]/g, ""))}
+                onKeyDown={(e) => {
+                  if (!allowDecimal && (e.key === "." || e.key === ",")) e.preventDefault();
+                }}
                 error={fieldErrors.quantity}
               />
               <TextAreaField

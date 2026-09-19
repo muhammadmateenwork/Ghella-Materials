@@ -268,7 +268,7 @@ export default function ItemDetailScreen() {
             <TextField
               label="Quantity needed *"
               value={quantity}
-              onChangeText={setQuantity}
+              onChangeText={(text) => setQuantity(allowDecimal ? text : text.replace(/[.,]/g, ""))}
               keyboardType={allowDecimal ? "decimal-pad" : "number-pad"}
               error={fieldErrors.quantity}
             />
