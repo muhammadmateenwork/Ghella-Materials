@@ -1,10 +1,10 @@
 "use client";
 
-import { itemFormSchema, useLocations, type Item } from "@ghella/shared";
-import { useState, type FormEvent } from "react";
+import { ITEM_CONDITIONS, itemFormSchema, useLocations, type Item } from "@ghella/shared";
+import { useMemo, useState, type FormEvent } from "react";
 import { Button } from "./Button";
 import { LocationTreePicker } from "./LocationTreePicker";
-import { TextAreaField, TextField } from "./TextField";
+import { LABEL_CLASSES, TextAreaField, TextField } from "./TextField";
 
 export function ItemForm({
   initialValues,
@@ -26,7 +26,7 @@ export function ItemForm({
   isSubmitting: boolean;
   onSubmit: (values: {
     name: string;
-    identification_number?: string;
+    identification_number: string;
     quantity: number;
     unit?: string;
     is_approximate?: boolean;
@@ -48,6 +48,14 @@ export function ItemForm({
   const [notes, setNotes] = useState(initialValues?.notes ?? "");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Items saved before this became a picker can carry a condition that
+  // isn't one of the standard options — keep it selectable instead of
+  // silently dropping it the moment someone reopens the form.
+  const conditionOptions = useMemo(
+    () => (condition && !(ITEM_CONDITIONS as readonly string[]).includes(condition) ? [...ITEM_CONDITIONS, condition] : ITEM_CONDITIONS),
+    [condition]
+  );
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -73,10 +81,10 @@ export function ItemForm({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} noValidate>
       <TextField label="Material name *" value={name} onChange={(e) => setName(e.target.value)} error={fieldErrors.name} />
       <TextField
-        label="Identification number"
+        label="Identification number *"
         value={idNumber}
         onChange={(e) => setIdNumber(e.target.value)}
         error={fieldErrors.identification_number}
@@ -119,13 +127,26 @@ export function ItemForm({
         </span>
       </label>
 
-      <TextField
-        label="Condition"
-        placeholder="e.g. Good, Used, Damaged"
-        value={condition}
-        onChange={(e) => setCondition(e.target.value)}
-        error={fieldErrors.condition}
-      />
+      <div className="mb-4">
+        <span className={LABEL_CLASSES}>Condition</span>
+        <div className="flex flex-wrap gap-1.5">
+          {conditionOptions.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setCondition(condition === opt ? "" : opt)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                condition === opt
+                  ? "border-primary bg-primary text-primary-text"
+                  : "border-border bg-surface text-text-muted hover:bg-surface-alt"
+              }`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+        {fieldErrors.condition ? <span className="mt-1 block text-xs font-semibold text-danger">{fieldErrors.condition}</span> : null}
+      </div>
       <LocationTreePicker
         label="Location *"
         locations={locations}

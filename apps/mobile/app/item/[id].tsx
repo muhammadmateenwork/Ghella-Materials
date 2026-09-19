@@ -90,6 +90,7 @@ export default function ItemDetailScreen() {
 
   const item = itemQuery.data;
   const available = item.availability?.available_quantity ?? item.quantity;
+  const allowDecimal = !Number.isInteger(item.quantity);
   const isOwner = isMaxTier && item.created_by === profile?.id;
 
   const handleDelete = async () => {
@@ -111,7 +112,7 @@ export default function ItemDetailScreen() {
 
   const handleReserve = () => {
     setFormError(null);
-    const result = reservationFormSchema(available).safeParse({
+    const result = reservationFormSchema(available, allowDecimal).safeParse({
       quantity,
       contact_info: contactInfo,
     });
@@ -268,7 +269,7 @@ export default function ItemDetailScreen() {
               label="Quantity needed *"
               value={quantity}
               onChangeText={setQuantity}
-              keyboardType="decimal-pad"
+              keyboardType={allowDecimal ? "decimal-pad" : "number-pad"}
               error={fieldErrors.quantity}
             />
             <TextField

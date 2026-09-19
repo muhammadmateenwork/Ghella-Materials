@@ -65,6 +65,7 @@ export default function ItemDetailPage() {
 
   const item = itemQuery.data;
   const available = item.availability?.available_quantity ?? item.quantity;
+  const allowDecimal = !Number.isInteger(item.quantity);
   const photo = item.item_photos[activePhoto] ?? item.item_photos[0];
   const isOwner = isMaxTier && item.created_by === profile?.id;
 
@@ -88,7 +89,7 @@ export default function ItemDetailPage() {
   const handleReserve = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    const result = reservationFormSchema(available).safeParse({
+    const result = reservationFormSchema(available, allowDecimal).safeParse({
       quantity,
       contact_info: contactInfo,
     });
@@ -236,7 +237,7 @@ export default function ItemDetailPage() {
           <div className="my-6 h-px bg-border" />
 
           {available > 0 ? (
-            <form onSubmit={handleReserve}>
+            <form onSubmit={handleReserve} noValidate>
               <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-black uppercase tracking-tight text-text">
                 <span className="h-4 w-1 shrink-0 bg-primary" aria-hidden />
                 Reserve this material
@@ -244,9 +245,9 @@ export default function ItemDetailPage() {
               <TextField
                 label="Quantity needed *"
                 type="number"
-                min={0.01}
+                min={allowDecimal ? 0.01 : 1}
                 max={available}
-                step="any"
+                step={allowDecimal ? "any" : 1}
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 error={fieldErrors.quantity}

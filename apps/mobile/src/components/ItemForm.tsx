@@ -1,10 +1,10 @@
-import { itemFormSchema, useLocations, type Item } from "@ghella/shared";
-import { useState } from "react";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import { ITEM_CONDITIONS, itemFormSchema, useLocations, type Item } from "@ghella/shared";
+import { useMemo, useState } from "react";
+import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { Button } from "./Button";
 import { LocationPickerField } from "./LocationPickerField";
 import { TextField } from "./TextField";
-import { colors, spacing, typography } from "../lib/theme";
+import { colors, fonts, radius, spacing, typography } from "../lib/theme";
 
 export function ItemForm({
   initialValues,
@@ -26,7 +26,7 @@ export function ItemForm({
   isSubmitting: boolean;
   onSubmit: (values: {
     name: string;
-    identification_number?: string;
+    identification_number: string;
     quantity: number;
     unit?: string;
     is_approximate?: boolean;
@@ -48,6 +48,14 @@ export function ItemForm({
   const [notes, setNotes] = useState(initialValues?.notes ?? "");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Items saved before this became a picker can carry a condition that
+  // isn't one of the standard options — keep it selectable instead of
+  // silently dropping it the moment someone reopens the form.
+  const conditionOptions = useMemo(
+    () => (condition && !(ITEM_CONDITIONS as readonly string[]).includes(condition) ? [...ITEM_CONDITIONS, condition] : ITEM_CONDITIONS),
+    [condition]
+  );
 
   const handleSubmit = () => {
     setFormError(null);
@@ -77,7 +85,7 @@ export function ItemForm({
     <View>
       <TextField label="Material name *" value={name} onChangeText={setName} error={fieldErrors.name} />
       <TextField
-        label="Identification number"
+        label="Identification number *"
         value={idNumber}
         onChangeText={setIdNumber}
         error={fieldErrors.identification_number}
@@ -124,13 +132,21 @@ export function ItemForm({
         />
       </View>
 
-      <TextField
-        label="Condition"
-        value={condition}
-        onChangeText={setCondition}
-        placeholder="e.g. Good, Used, Damaged"
-        error={fieldErrors.condition}
-      />
+      <View style={styles.conditionField}>
+        <Text style={styles.conditionLabel}>Condition</Text>
+        <View style={styles.conditionRow}>
+          {conditionOptions.map((opt) => (
+            <Pressable
+              key={opt}
+              onPress={() => setCondition(condition === opt ? "" : opt)}
+              style={[styles.conditionChip, condition === opt && styles.conditionChipSelected]}
+            >
+              <Text style={[styles.conditionChipText, condition === opt && styles.conditionChipTextSelected]}>{opt}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {fieldErrors.condition ? <Text style={styles.conditionError}>{fieldErrors.condition}</Text> : null}
+      </View>
       <LocationPickerField
         label="Location *"
         locations={locations}
@@ -167,5 +183,27 @@ const styles = StyleSheet.create({
   approxLabel: { ...typography.bodyStrong, fontSize: 14, color: colors.text },
   approxHint: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   reservedHint: { ...typography.caption, color: colors.textMuted, marginTop: -8, marginBottom: spacing.md },
+  conditionField: { marginBottom: spacing.md },
+  conditionLabel: {
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
+  },
+  conditionRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs + 2 },
+  conditionChip: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  conditionChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  conditionChipText: { ...typography.captionStrong, color: colors.textMuted },
+  conditionChipTextSelected: { color: colors.primaryText },
+  conditionError: { color: colors.danger, fontSize: 12, fontFamily: fonts.bodySemiBold, marginTop: spacing.xs },
   formError: { color: colors.danger, marginBottom: spacing.md },
 });

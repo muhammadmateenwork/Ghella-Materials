@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+// A fixed set of conditions shown as a picker instead of free text, so
+// reports and filters aren't fighting inconsistent phrasing ("Good" vs
+// "good" vs "Good condition"). Not a hard enum in the schema below — an
+// item saved before this list existed can carry any string, and the
+// picker UI is responsible for keeping that value selectable rather than
+// silently discarding it when the item is next edited.
+export const ITEM_CONDITIONS = ["New", "Good", "Fair", "Used", "Damaged"] as const;
+
 // minReservedQuantity: when editing an item that already has active
 // reservations against it, the quantity can't drop below what's already
 // committed (the database enforces this too — see
@@ -8,7 +16,7 @@ import { z } from "zod";
 export function itemFormSchema(minReservedQuantity = 0) {
   return z.object({
     name: z.string().trim().min(1, "Material name is required"),
-    identification_number: z.string().trim().optional().or(z.literal("")),
+    identification_number: z.string().trim().min(1, "Identification number is required"),
     quantity: z.coerce
       .number()
       .min(0, "Quantity cannot be negative")
