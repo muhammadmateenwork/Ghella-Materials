@@ -11,7 +11,7 @@ import {
   useProfile,
   type ItemWithDetails,
 } from "@ghella/shared";
-import { Boxes, PackageCheck, PackageSearch, PackageX, Plus, Search } from "lucide-react";
+import { Boxes, PackageCheck, PackageSearch, PackageX, Plus, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useConfirm } from "../../../components/ConfirmDialog";
@@ -118,6 +118,11 @@ export default function BrowsePage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        {search ? (
+          <button type="button" onClick={() => setSearch("")} aria-label="Clear search" className="text-text-faint hover:text-text">
+            <X size={16} strokeWidth={2} />
+          </button>
+        ) : null}
       </div>
 
       <div className="mb-6">

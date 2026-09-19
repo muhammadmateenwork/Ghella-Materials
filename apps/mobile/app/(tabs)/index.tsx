@@ -9,7 +9,7 @@ import {
   type ItemWithDetails,
 } from "@ghella/shared";
 import { router, useLocalSearchParams } from "expo-router";
-import { PackageSearch, Plus, Search } from "lucide-react-native";
+import { PackageSearch, Plus, Search, X } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useConfirm } from "../../src/components/ConfirmDialog";
@@ -96,6 +96,11 @@ export default function BrowseScreen() {
             value={search}
             onChangeText={setSearch}
           />
+          {search ? (
+            <Pressable onPress={() => setSearch("")} hitSlop={8} accessibilityLabel="Clear search">
+              <X size={16} color={colors.textFaint} strokeWidth={2} />
+            </Pressable>
+          ) : null}
         </View>
         <LocationDrilldown
           locations={locations}
