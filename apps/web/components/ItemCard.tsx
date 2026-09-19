@@ -8,6 +8,10 @@ import { Badge } from "./Badge";
 import { LocationBreadcrumb } from "./LocationBreadcrumb";
 
 const LONG_PRESS_MS = 450;
+// Cancels the long-press if the pointer has drifted this far — otherwise a
+// touch-scroll on mobile web (which has no native long-press to tell drag
+// from hold apart, unlike RN's Pressable) would fire the quick view mid-swipe.
+const MOVE_CANCEL_PX = 10;
 
 export function ItemCard({
   item,
@@ -39,21 +43,31 @@ export function ItemCard({
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null);
 
   const clearLongPressTimer = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
+    pressOrigin.current = null;
   };
 
-  const handlePointerDown = () => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (!onLongPress) return;
     longPressFired.current = false;
+    pressOrigin.current = { x: e.clientX, y: e.clientY };
     longPressTimer.current = setTimeout(() => {
       longPressFired.current = true;
       onLongPress();
     }, LONG_PRESS_MS);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!pressOrigin.current) return;
+    const dx = e.clientX - pressOrigin.current.x;
+    const dy = e.clientY - pressOrigin.current.y;
+    if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) clearLongPressTimer();
   };
 
   const handleClick = () => {
@@ -73,6 +87,7 @@ export function ItemCard({
         if (e.key === "Enter" || e.key === " ") router.push(`/items/${item.id}`);
       }}
       onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
       onPointerUp={clearLongPressTimer}
       onPointerLeave={clearLongPressTimer}
       onPointerCancel={clearLongPressTimer}
