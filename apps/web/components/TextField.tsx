@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 type BaseProps = { label: string; error?: string };
 
@@ -44,27 +44,6 @@ export function TextAreaField({
         className={`${FIELD_CLASSES} placeholder:text-text-faint ${error ? "border-danger" : "border-border"} ${className}`}
         {...props}
       />
-      {error ? <span className="mt-1 block text-xs font-semibold text-danger">{error}</span> : null}
-    </label>
-  );
-}
-
-export function SelectField({
-  label,
-  error,
-  className = "",
-  children,
-  ...props
-}: BaseProps & SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <label className="mb-4 block">
-      {label ? <span className={LABEL_CLASSES}>{label}</span> : null}
-      <select
-        className={`${FIELD_CLASSES} ${error ? "border-danger" : "border-border"} ${className}`}
-        {...props}
-      >
-        {children}
-      </select>
       {error ? <span className="mt-1 block text-xs font-semibold text-danger">{error}</span> : null}
     </label>
   );

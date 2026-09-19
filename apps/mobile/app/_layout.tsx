@@ -13,6 +13,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ConfirmProvider } from "../src/components/ConfirmDialog";
+import { PhotoSourceProvider } from "../src/components/PhotoSourceSheet";
 import { SuccessOverlayProvider } from "../src/components/SuccessOverlay";
 import { ToastProvider } from "../src/components/Toast";
 import { queryClient } from "../src/lib/queryClient";
@@ -42,11 +43,13 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
             <ConfirmProvider>
-              <SuccessOverlayProvider>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="item/[id]" options={{ headerShown: true, title: "Item Details" }} />
-                </Stack>
-              </SuccessOverlayProvider>
+              <PhotoSourceProvider>
+                <SuccessOverlayProvider>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="item/[id]" options={{ headerShown: true, title: "Item Details" }} />
+                  </Stack>
+                </SuccessOverlayProvider>
+              </PhotoSourceProvider>
             </ConfirmProvider>
           </ToastProvider>
         </QueryClientProvider>

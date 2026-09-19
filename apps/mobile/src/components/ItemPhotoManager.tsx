@@ -8,11 +8,12 @@ import {
 } from "@ghella/shared";
 import { File } from "expo-file-system";
 import { Image } from "expo-image";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
-import { pickImages } from "../lib/imagePicker";
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { pickFromLibrary, takePhoto } from "../lib/imagePicker";
 import { photoPickerStyles as styles } from "./photoPickerStyles";
 import { AddPhotoTile } from "./AddPhotoTile";
 import { useConfirm } from "./ConfirmDialog";
+import { usePhotoSource } from "./PhotoSourceSheet";
 import { useToast } from "./Toast";
 import { X } from "lucide-react-native";
 
@@ -21,10 +22,23 @@ export function ItemPhotoManager({ itemId, photos }: { itemId: string; photos: I
   const uploadPhoto = useUploadItemPhoto();
   const deletePhoto = useDeleteItemPhoto();
   const confirmDialog = useConfirm();
+  const pickPhotoSource = usePhotoSource();
   const showToast = useToast();
 
   const handleAddPhoto = async () => {
-    const assets = await pickImages();
+    let assets;
+    try {
+      if (Platform.OS === "web") {
+        assets = await pickFromLibrary();
+      } else {
+        const source = await pickPhotoSource();
+        if (!source) return;
+        assets = source === "camera" ? await takePhoto() : await pickFromLibrary();
+      }
+    } catch (error) {
+      showToast(getFriendlyErrorMessage(error), "error");
+      return;
+    }
     for (const asset of assets) {
       const file = new File(asset.uri);
       const body = await file.arrayBuffer();

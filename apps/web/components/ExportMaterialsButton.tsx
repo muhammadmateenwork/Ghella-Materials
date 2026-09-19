@@ -83,39 +83,48 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
               <label className="block">
                 <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-text-muted">Added from</span>
                 <input
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="YYYY-MM-DD"
                   value={createdFrom}
                   onChange={(e) => setCreatedFrom(e.target.value)}
-                  className="w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text outline-none focus:border-primary"
+                  className="w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text outline-none placeholder:text-text-faint focus:border-primary"
                 />
               </label>
               <label className="block">
                 <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-text-muted">Added to</span>
                 <input
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="YYYY-MM-DD"
                   value={createdTo}
                   onChange={(e) => setCreatedTo(e.target.value)}
-                  className="w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text outline-none focus:border-primary"
+                  className="w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text outline-none placeholder:text-text-faint focus:border-primary"
                 />
               </label>
             </div>
 
-            <label className="mb-3 block">
-              <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-text-muted">
+            <div className="mb-4">
+              <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-text-muted">
                 Reservation status
               </span>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as ExportReservationStatus)}
-                className="w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text outline-none focus:border-primary"
-              >
+              <div className="flex flex-wrap gap-1.5">
                 {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setStatus(opt.value)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      status === opt.value
+                        ? "border-primary bg-primary text-primary-text"
+                        : "border-border bg-surface text-text-muted hover:bg-surface-alt"
+                    }`}
+                  >
                     {opt.label}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+            </div>
 
             <label className="mb-4 flex items-center gap-2 text-sm text-text">
               <input
