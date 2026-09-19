@@ -35,6 +35,7 @@ export function LocationPickerField({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
   const [pickingParent, setPickingParent] = useState(false);
+  const [parentSearch, setParentSearch] = useState("");
   const [newName, setNewName] = useState("");
   const [newParentId, setNewParentId] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | undefined>();
@@ -44,6 +45,15 @@ export function LocationPickerField({
     () => [...locations].sort((a, b) => getLocationPath(locations, a.id).localeCompare(getLocationPath(locations, b.id))),
     [locations]
   );
+  // Matches on the full path ("Pakistan > Punjab > Lahore > Town"), not
+  // just a location's own name, so searching "town" finds it no matter how
+  // deep it sits — same "search reaches child locations" behavior as the
+  // main tree search below, just as a flat filtered list.
+  const filteredParentLocations = useMemo(() => {
+    const needle = parentSearch.trim().toLowerCase();
+    if (!needle) return flatLocations;
+    return flatLocations.filter((loc) => getLocationPath(locations, loc.id).toLowerCase().includes(needle));
+  }, [flatLocations, locations, parentSearch]);
 
   const tree = useMemo(() => buildLocationTree(locations), [locations]);
   const searching = search.trim().length > 0;
@@ -71,6 +81,7 @@ export function LocationPickerField({
     setSearch("");
     setIsAdding(false);
     setPickingParent(false);
+    setParentSearch("");
   };
 
   const handleAddLocation = () => {
@@ -128,36 +139,54 @@ export function LocationPickerField({
           </View>
 
           {pickingParent ? (
-            <FlatList
-              data={flatLocations}
-              keyExtractor={(loc) => loc.id}
-              ListHeaderComponent={
-                <Pressable
-                  style={styles.flatRow}
-                  onPress={() => {
-                    setNewParentId(null);
-                    setPickingParent(false);
-                  }}
-                >
-                  <Text style={styles.rowText}>No parent (top-level yard)</Text>
-                  {newParentId === null ? <Check size={17} color={colors.primary} strokeWidth={2.5} /> : null}
-                </Pressable>
-              }
-              renderItem={({ item: loc }) => (
-                <Pressable
-                  style={styles.flatRow}
-                  onPress={() => {
-                    setNewParentId(loc.id);
-                    setPickingParent(false);
-                  }}
-                >
-                  <Text style={styles.rowText} numberOfLines={1}>
-                    {getLocationPath(locations, loc.id)}
-                  </Text>
-                  {newParentId === loc.id ? <Check size={17} color={colors.primary} strokeWidth={2.5} /> : null}
-                </Pressable>
-              )}
-            />
+            <>
+              <View style={styles.searchBar}>
+                <Search size={16} color={colors.textFaint} strokeWidth={2} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search locations"
+                  placeholderTextColor={colors.textFaint}
+                  value={parentSearch}
+                  onChangeText={setParentSearch}
+                />
+                {parentSearch ? (
+                  <Pressable onPress={() => setParentSearch("")} hitSlop={8}>
+                    <X size={15} color={colors.textFaint} strokeWidth={2} />
+                  </Pressable>
+                ) : null}
+              </View>
+              <FlatList
+                data={filteredParentLocations}
+                keyExtractor={(loc) => loc.id}
+                ListHeaderComponent={
+                  <Pressable
+                    style={styles.flatRow}
+                    onPress={() => {
+                      setNewParentId(null);
+                      setPickingParent(false);
+                    }}
+                  >
+                    <Text style={styles.rowText}>No parent (top-level yard)</Text>
+                    {newParentId === null ? <Check size={17} color={colors.primary} strokeWidth={2.5} /> : null}
+                  </Pressable>
+                }
+                renderItem={({ item: loc }) => (
+                  <Pressable
+                    style={styles.flatRow}
+                    onPress={() => {
+                      setNewParentId(loc.id);
+                      setPickingParent(false);
+                    }}
+                  >
+                    <Text style={styles.rowText} numberOfLines={1}>
+                      {getLocationPath(locations, loc.id)}
+                    </Text>
+                    {newParentId === loc.id ? <Check size={17} color={colors.primary} strokeWidth={2.5} /> : null}
+                  </Pressable>
+                )}
+                ListEmptyComponent={<Text style={styles.empty}>No locations match your search.</Text>}
+              />
+            </>
           ) : isAdding ? (
             <View style={styles.addForm}>
               <TextField label="Location name *" value={newName} onChangeText={setNewName} error={addError} />
