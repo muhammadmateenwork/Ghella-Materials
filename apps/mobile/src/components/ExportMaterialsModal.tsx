@@ -10,7 +10,7 @@ import { Download, X } from "lucide-react-native";
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { Button } from "./Button";
-import { TextField } from "./TextField";
+import { DatePickerField } from "./DatePickerField";
 import { useToast } from "./Toast";
 import { shareXlsx } from "../lib/exportFile";
 import { colors, radius, shadow, spacing, typography } from "../lib/theme";
@@ -54,8 +54,7 @@ export function ExportMaterialsModal({
         showToast("No materials match those filters.", "error");
         return;
       }
-      const workbook = await itemsToXlsx(items, locationsQuery.data ?? [], includeDetails);
-      await shareXlsx("ghella-materials", workbook);
+      await shareXlsx("ghella-materials", () => itemsToXlsx(items, locationsQuery.data ?? [], includeDetails));
       onClose();
     } catch (err) {
       showToast(`Couldn't export: ${getFriendlyErrorMessage(err)}`, "error");
@@ -77,10 +76,10 @@ export function ExportMaterialsModal({
 
           <View style={styles.dateRow}>
             <View style={styles.dateField}>
-              <TextField label="Added from" placeholder="YYYY-MM-DD" value={createdFrom} onChangeText={setCreatedFrom} />
+              <DatePickerField label="Added from" value={createdFrom} onChange={setCreatedFrom} />
             </View>
             <View style={styles.dateField}>
-              <TextField label="Added to" placeholder="YYYY-MM-DD" value={createdTo} onChangeText={setCreatedTo} />
+              <DatePickerField label="Added to" value={createdTo} onChange={setCreatedTo} />
             </View>
           </View>
 

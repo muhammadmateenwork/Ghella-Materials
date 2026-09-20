@@ -12,6 +12,7 @@ import { Download, X } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { downloadBlob } from "../lib/downloadBlob";
+import { DatePickerField } from "./DatePickerField";
 import { useToast } from "./Toast";
 
 const STATUS_OPTIONS: { value: ExportReservationStatus; label: string }[] = [
@@ -82,28 +83,8 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
             </div>
 
             <div className="mb-3 grid grid-cols-2 gap-2">
-              <label className="block">
-                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-text-muted">Added from</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="YYYY-MM-DD"
-                  value={createdFrom}
-                  onChange={(e) => setCreatedFrom(e.target.value)}
-                  className="w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text outline-none placeholder:text-text-faint focus:border-primary"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-text-muted">Added to</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="YYYY-MM-DD"
-                  value={createdTo}
-                  onChange={(e) => setCreatedTo(e.target.value)}
-                  className="w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text outline-none placeholder:text-text-faint focus:border-primary"
-                />
-              </label>
+              <DatePickerField label="Added from" value={createdFrom} onChange={setCreatedFrom} />
+              <DatePickerField label="Added to" value={createdTo} onChange={setCreatedTo} />
             </div>
 
             <div className="mb-4">

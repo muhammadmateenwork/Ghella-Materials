@@ -70,9 +70,11 @@ export default function BrowsePage() {
 
   // The empty state already offers its own "Add material" CTA — showing the
   // FAB too, on top of an otherwise empty page, was a redundant second way
-  // to do the exact same thing.
-  const showEmptyAddCta =
-    !itemsQuery.isLoading && !itemsQuery.isError && items.length === 0 && !debouncedSearch && isMaxTier;
+  // to do the exact same thing. Gated on dataSettled (not just "not
+  // loading") so the FAB doesn't flash visible during the initial fetch
+  // and then disappear the instant the empty state resolves in.
+  const dataSettled = !itemsQuery.isLoading && !itemsQuery.isError;
+  const showEmptyAddCta = dataSettled && items.length === 0 && !debouncedSearch && isMaxTier;
 
   const sentinelRef = useLoadMoreSentinel(
     () => itemsQuery.fetchNextPage(),
@@ -184,7 +186,7 @@ export default function BrowsePage() {
         </>
       )}
 
-      {isMaxTier && !showEmptyAddCta && typeof document !== "undefined"
+      {isMaxTier && dataSettled && !showEmptyAddCta && typeof document !== "undefined"
         ? createPortal(
             // Portalled to document.body: the page content sits inside a
             // per-route entrance-animation wrapper that briefly has an

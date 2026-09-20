@@ -61,8 +61,7 @@ export function ItemReservationsList({
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const workbook = await reservationsToXlsx(itemName, reservations);
-      await shareXlsx(`${itemName}-reservations`, workbook);
+      await shareXlsx(`${itemName}-reservations`, () => reservationsToXlsx(itemName, reservations));
     } catch (err) {
       showToast(getFriendlyErrorMessage(err), "error");
     } finally {

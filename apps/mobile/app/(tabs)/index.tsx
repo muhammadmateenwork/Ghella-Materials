@@ -71,9 +71,11 @@ export default function BrowseScreen() {
 
   // The empty state already offers its own "Add material" CTA — showing
   // the FAB too, on top of an otherwise empty screen, was a redundant
-  // second way to do the exact same thing.
-  const showEmptyAddCta =
-    !itemsQuery.isLoading && !itemsQuery.isError && items.length === 0 && !debouncedSearch && isMaxTier;
+  // second way to do the exact same thing. Gated on dataSettled (not just
+  // "not loading") so the FAB doesn't flash visible during the initial
+  // fetch and then disappear the instant the empty state resolves in.
+  const dataSettled = !itemsQuery.isLoading && !itemsQuery.isError;
+  const showEmptyAddCta = dataSettled && items.length === 0 && !debouncedSearch && isMaxTier;
 
   const handleDelete = async (item: { id: string; name: string }) => {
     const confirmed = await confirmDialog({
@@ -175,7 +177,7 @@ export default function BrowseScreen() {
         />
       )}
 
-      {isMaxTier && !showEmptyAddCta ? (
+      {isMaxTier && dataSettled && !showEmptyAddCta ? (
         <Pressable
           onPress={() => router.push("/(tabs)/admin/items/new")}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}

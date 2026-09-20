@@ -37,8 +37,10 @@ export default function AdminItemsScreen() {
   // The empty state already offers its own "Add item" CTA — showing the
   // header's Export/Add item row too, on top of an otherwise empty screen
   // (where there's nothing to export anyway), was two ways to do the same
-  // thing side by side.
-  const isEmpty = !itemsQuery.isLoading && !itemsQuery.isError && items.length === 0;
+  // thing side by side. Gated on a positive "we know there are items"
+  // check (not just "not loading") so the row doesn't flash visible during
+  // the initial fetch and then disappear the instant it resolves empty.
+  const hasItems = !itemsQuery.isLoading && !itemsQuery.isError && items.length > 0;
 
   const handleDelete = async (item: { id: string; name: string }) => {
     const confirmed = await confirmDialog({
@@ -56,7 +58,7 @@ export default function AdminItemsScreen() {
 
   return (
     <Screen padded={false}>
-      {!isEmpty ? (
+      {hasItems ? (
         <View style={styles.header}>
           <Button title="Export" icon={Download} variant="ghost" size="sm" onPress={() => setExportOpen(true)} />
           <Button
