@@ -30,7 +30,7 @@ export function ItemForm({
     quantity: number;
     unit?: string;
     is_approximate?: boolean;
-    condition?: string;
+    condition: string;
     location_id: string;
     notes?: string;
   }) => void;
@@ -128,13 +128,13 @@ export function ItemForm({
       </label>
 
       <div className="mb-4">
-        <span className={LABEL_CLASSES}>Condition</span>
+        <span className={LABEL_CLASSES}>Condition *</span>
         <div className="flex flex-wrap gap-1.5">
           {conditionOptions.map((opt) => (
             <button
               key={opt}
               type="button"
-              onClick={() => setCondition(condition === opt ? "" : opt)}
+              onClick={() => setCondition(opt)}
               className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                 condition === opt
                   ? "border-primary bg-primary text-primary-text"

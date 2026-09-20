@@ -68,6 +68,12 @@ export default function BrowsePage() {
   const items = useMemo(() => itemsQuery.data?.pages.flatMap((page) => page.items) ?? [], [itemsQuery.data]);
   const statsQuery = useItemsStats(locationIds);
 
+  // The empty state already offers its own "Add material" CTA — showing the
+  // FAB too, on top of an otherwise empty page, was a redundant second way
+  // to do the exact same thing.
+  const showEmptyAddCta =
+    !itemsQuery.isLoading && !itemsQuery.isError && items.length === 0 && !debouncedSearch && isMaxTier;
+
   const sentinelRef = useLoadMoreSentinel(
     () => itemsQuery.fetchNextPage(),
     Boolean(itemsQuery.hasNextPage) && !itemsQuery.isFetchingNextPage
@@ -148,7 +154,7 @@ export default function BrowsePage() {
           title={debouncedSearch ? "No materials match your search" : "No materials recorded yet"}
           subtitle={debouncedSearch ? "Try a different name, ID, location, or note." : undefined}
           action={
-            !debouncedSearch && isMaxTier
+            showEmptyAddCta
               ? { label: "Add material", icon: Plus, onClick: () => router.push("/admin/items/new") }
               : undefined
           }
@@ -178,7 +184,7 @@ export default function BrowsePage() {
         </>
       )}
 
-      {isMaxTier && typeof document !== "undefined"
+      {isMaxTier && !showEmptyAddCta && typeof document !== "undefined"
         ? createPortal(
             // Portalled to document.body: the page content sits inside a
             // per-route entrance-animation wrapper that briefly has an

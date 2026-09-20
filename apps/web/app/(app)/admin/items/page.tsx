@@ -52,18 +52,26 @@ export default function AdminItemsPage() {
     });
   };
 
+  // The empty state below already offers its own "Add item" CTA — showing
+  // the header's Export/Add item row too, on top of an otherwise empty
+  // page (where there's nothing to export anyway), was two ways to do the
+  // same thing side by side.
+  const isEmpty = !itemsQuery.isLoading && !itemsQuery.isError && items.length === 0;
+
   return (
     <div>
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${isEmpty ? "mb-2" : "mb-5"}`}>
         <PageTitle className="">Materials</PageTitle>
-        <div className="flex items-center gap-2">
-          <ExportMaterialsButton ownedByUserId={profile?.id} />
-          <Link href="/admin/items/new" className="flex-1 sm:flex-none">
-            <Button icon={Plus} className="w-full">
-              Add item
-            </Button>
-          </Link>
-        </div>
+        {!isEmpty ? (
+          <div className="flex items-center gap-2">
+            <ExportMaterialsButton ownedByUserId={profile?.id} />
+            <Link href="/admin/items/new" className="flex-1 sm:flex-none">
+              <Button icon={Plus} className="w-full">
+                Add item
+              </Button>
+            </Link>
+          </div>
+        ) : null}
       </div>
 
       {itemsQuery.isLoading ? (

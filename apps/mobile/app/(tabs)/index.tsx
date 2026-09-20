@@ -69,6 +69,12 @@ export default function BrowseScreen() {
   const itemsQuery = useItemsInfinite(locationIds, debouncedSearch, true, undefined, matchingLocationIds);
   const items = useMemo(() => itemsQuery.data?.pages.flatMap((page) => page.items) ?? [], [itemsQuery.data]);
 
+  // The empty state already offers its own "Add material" CTA — showing
+  // the FAB too, on top of an otherwise empty screen, was a redundant
+  // second way to do the exact same thing.
+  const showEmptyAddCta =
+    !itemsQuery.isLoading && !itemsQuery.isError && items.length === 0 && !debouncedSearch && isMaxTier;
+
   const handleDelete = async (item: { id: string; name: string }) => {
     const confirmed = await confirmDialog({
       title: "Delete this material?",
@@ -123,7 +129,7 @@ export default function BrowseScreen() {
           title={debouncedSearch ? "No materials match your search" : "No materials recorded yet"}
           subtitle={debouncedSearch ? "Try a different name, ID, location, or note." : undefined}
           action={
-            !debouncedSearch && isMaxTier
+            showEmptyAddCta
               ? { label: "Add material", icon: Plus, onPress: () => router.push("/(tabs)/admin/items/new") }
               : undefined
           }
@@ -169,7 +175,7 @@ export default function BrowseScreen() {
         />
       )}
 
-      {isMaxTier ? (
+      {isMaxTier && !showEmptyAddCta ? (
         <Pressable
           onPress={() => router.push("/(tabs)/admin/items/new")}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}

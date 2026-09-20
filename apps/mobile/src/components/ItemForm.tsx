@@ -30,7 +30,7 @@ export function ItemForm({
     quantity: number;
     unit?: string;
     is_approximate?: boolean;
-    condition?: string;
+    condition: string;
     location_id: string;
     notes?: string;
   }) => void;
@@ -133,12 +133,12 @@ export function ItemForm({
       </View>
 
       <View style={styles.conditionField}>
-        <Text style={styles.conditionLabel}>Condition</Text>
+        <Text style={styles.conditionLabel}>Condition *</Text>
         <View style={styles.conditionRow}>
           {conditionOptions.map((opt) => (
             <Pressable
               key={opt}
-              onPress={() => setCondition(condition === opt ? "" : opt)}
+              onPress={() => setCondition(opt)}
               style={[styles.conditionChip, condition === opt && styles.conditionChipSelected]}
             >
               <Text style={[styles.conditionChipText, condition === opt && styles.conditionChipTextSelected]}>{opt}</Text>

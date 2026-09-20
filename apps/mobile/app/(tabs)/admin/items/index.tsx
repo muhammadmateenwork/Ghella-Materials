@@ -34,6 +34,12 @@ export default function AdminItemsScreen() {
   const items = useMemo(() => itemsQuery.data?.pages.flatMap((page) => page.items) ?? [], [itemsQuery.data]);
   const [exportOpen, setExportOpen] = useState(false);
 
+  // The empty state already offers its own "Add item" CTA — showing the
+  // header's Export/Add item row too, on top of an otherwise empty screen
+  // (where there's nothing to export anyway), was two ways to do the same
+  // thing side by side.
+  const isEmpty = !itemsQuery.isLoading && !itemsQuery.isError && items.length === 0;
+
   const handleDelete = async (item: { id: string; name: string }) => {
     const confirmed = await confirmDialog({
       title: "Delete this material?",
@@ -50,15 +56,17 @@ export default function AdminItemsScreen() {
 
   return (
     <Screen padded={false}>
-      <View style={styles.header}>
-        <Button title="Export" icon={Download} variant="ghost" size="sm" onPress={() => setExportOpen(true)} />
-        <Button
-          title="Add item"
-          icon={Plus}
-          size="sm"
-          onPress={() => router.push("/(tabs)/admin/items/new")}
-        />
-      </View>
+      {!isEmpty ? (
+        <View style={styles.header}>
+          <Button title="Export" icon={Download} variant="ghost" size="sm" onPress={() => setExportOpen(true)} />
+          <Button
+            title="Add item"
+            icon={Plus}
+            size="sm"
+            onPress={() => router.push("/(tabs)/admin/items/new")}
+          />
+        </View>
+      ) : null}
 
       {itemsQuery.isLoading ? (
         <StackLoader style={styles.loading} />

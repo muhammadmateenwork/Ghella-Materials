@@ -29,7 +29,7 @@ export function itemFormSchema(minReservedQuantity = 0) {
     // than an exact figure — for stock that's genuinely hard to count
     // precisely (a pallet of cement bags, a bin of fittings, etc).
     is_approximate: z.coerce.boolean().optional(),
-    condition: z.string().trim().optional().or(z.literal("")),
+    condition: z.string().trim().min(1, "Condition is required"),
     location_id: z.string().uuid("Select a location"),
     notes: z.string().trim().optional().or(z.literal("")),
   });

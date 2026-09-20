@@ -16,6 +16,12 @@ const PhotoSourceContext = createContext<PhotoSourceFn | null>(null);
 // actually does it.
 export function PhotoSourceProvider({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
+  // Some devices under-report (or briefly zero out) the bottom safe-area
+  // inset for the gesture/button nav bar — same issue already worked
+  // around on the tab bar. Without a floor here, the Cancel row could
+  // render with too little clearance and end up sitting under/behind the
+  // system nav bar instead of just above it.
+  const bottomInset = Math.max(insets.bottom, 20);
   const [visible, setVisible] = useState(false);
   const resolver = useRef<(value: PhotoSource) => void>(null);
   const anim = useRef(new Animated.Value(0)).current;
@@ -48,9 +54,9 @@ export function PhotoSourceProvider({ children }: { children: ReactNode }) {
       <Modal visible={visible} transparent animationType="none" onRequestClose={() => handleClose(null)}>
         <Pressable style={styles.backdrop} onPress={() => handleClose(null)}>
           <Animated.View
-            style={[styles.sheetWrap, { paddingBottom: insets.bottom + spacing.sm, opacity: anim, transform: [{ translateY }] }]}
+            style={[styles.sheetWrap, { paddingBottom: bottomInset + spacing.sm, opacity: anim, transform: [{ translateY }] }]}
           >
-            <Pressable>
+            <Pressable style={styles.content}>
               <Text style={styles.title}>Add photo</Text>
               <View style={styles.card}>
                 <Pressable
@@ -86,6 +92,7 @@ export function PhotoSourceProvider({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: "rgba(12,21,38,0.45)", justifyContent: "flex-end" },
   sheetWrap: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+  content: { width: "100%" },
   title: { ...typography.caption, color: "rgba(255,255,255,0.85)", textAlign: "center", marginBottom: spacing.sm },
   card: {
     borderRadius: radius.lg,
@@ -103,8 +110,8 @@ const styles = StyleSheet.create({
   optionPressed: { backgroundColor: colors.surfaceAlt },
   optionText: { ...typography.bodyStrong, fontSize: 16, color: colors.text },
   divider: { height: 1, backgroundColor: colors.border },
-  cancelCard: { marginTop: spacing.sm, alignItems: "center" },
-  cancelText: { ...typography.bodyStrong, fontSize: 16, color: colors.primary },
+  cancelCard: { marginTop: spacing.sm, alignItems: "center", justifyContent: "center", paddingVertical: spacing.md },
+  cancelText: { ...typography.bodyStrong, fontSize: 16, fontWeight: "700", color: colors.primary },
 });
 
 export function usePhotoSource() {
