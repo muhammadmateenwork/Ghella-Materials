@@ -49,7 +49,7 @@ export default function RootLayout() {
                   <Stack screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="item/[id]" options={{ headerShown: true, title: "Item Details" }} />
                     {/* Registered at the root (not nested under the admin tab's own stack) so
-                        the header's back button always returns to whichever tab the edit was
+                        the header's back button always returns to whichever tab the screen was
                         opened from — Browse, Manage Materials, or the item detail screen —
                         instead of always landing on Manage Materials. */}
                     <Stack.Screen
@@ -57,6 +57,17 @@ export default function RootLayout() {
                       options={{
                         headerShown: true,
                         title: "Edit material",
+                        headerStyle: { backgroundColor: colors.surface },
+                        headerTintColor: colors.primary,
+                        headerTitleStyle: { color: colors.text, fontFamily: fonts.bodyBold },
+                        headerShadowVisible: false,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="item/new"
+                      options={{
+                        headerShown: true,
+                        title: "Add material",
                         headerStyle: { backgroundColor: colors.surface },
                         headerTintColor: colors.primary,
                         headerTitleStyle: { color: colors.text, fontFamily: fonts.bodyBold },

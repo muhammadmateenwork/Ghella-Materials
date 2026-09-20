@@ -3,11 +3,11 @@ import { File } from "expo-file-system";
 import type { ImagePickerAsset } from "expo-image-picker";
 import { router } from "expo-router";
 import { useState } from "react";
-import { ItemForm } from "../../../../src/components/ItemForm";
-import { PendingPhotoPicker } from "../../../../src/components/PendingPhotoPicker";
-import { Screen } from "../../../../src/components/Screen";
-import { useSuccessOverlay } from "../../../../src/components/SuccessOverlay";
-import { useToast } from "../../../../src/components/Toast";
+import { ItemForm } from "../../src/components/ItemForm";
+import { PendingPhotoPicker } from "../../src/components/PendingPhotoPicker";
+import { Screen } from "../../src/components/Screen";
+import { useSuccessOverlay } from "../../src/components/SuccessOverlay";
+import { useToast } from "../../src/components/Toast";
 
 export default function NewItemScreen() {
   const createItem = useCreateItem();

@@ -65,7 +65,7 @@ export default function AdminItemsScreen() {
             title="Add item"
             icon={Plus}
             size="sm"
-            onPress={() => router.push("/(tabs)/admin/items/new")}
+            onPress={() => router.push("/item/new")}
           />
         </View>
       ) : null}
@@ -79,7 +79,7 @@ export default function AdminItemsScreen() {
           icon={Package}
           title="No materials yet"
           subtitle="Add the first item to get started."
-          action={{ label: "Add item", icon: Plus, onPress: () => router.push("/(tabs)/admin/items/new") }}
+          action={{ label: "Add item", icon: Plus, onPress: () => router.push("/item/new") }}
         />
       ) : (
         <FlatList

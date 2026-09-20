@@ -47,7 +47,7 @@ export function ItemReservationsList({
   const handleCancel = async (reservationId: string, reserverName: string) => {
     const confirmed = await confirmDialog({
       title: "Cancel this reservation?",
-      message: `${reserverName} will be notified (email + app) that their reservation was cancelled.`,
+      message: `This cancels ${reserverName}'s reservation.`,
       confirmLabel: "Cancel reservation",
       danger: true,
     });

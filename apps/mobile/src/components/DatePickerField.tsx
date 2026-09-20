@@ -1,7 +1,7 @@
 import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, fonts, radius, spacing, typography } from "../lib/theme";
+import { colors, fonts, radius, shadow, spacing, typography } from "../lib/theme";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -14,12 +14,16 @@ function daysInMonth(y: number, m: number) {
 }
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
-const CELL_SIZE = 32;
+// A percentage rather than a fixed pixel width — this field sits in a
+// narrow half-width column (two date fields side by side), and a fixed
+// px cell width could exceed that column's real width, silently
+// dropping the columns that don't fit instead of laying out all 7.
+const CELL_WIDTH = `${100 / 7}%` as const;
 
 /** A custom month-grid calendar instead of the OS date picker — same
- * "no default UI" reasoning as the rest of the app's pickers. Renders
- * inline (not a separate Modal) since this is always used inside a modal
- * of its own (the export sheet), and nesting Modals on RN is best avoided. */
+ * "no default UI" reasoning as the rest of the app's pickers. Rendered as
+ * an absolutely-positioned overlay (not inline) so opening it doesn't
+ * shove the rest of the export form down the screen. */
 export function DatePickerField({
   label,
   value,
@@ -64,68 +68,79 @@ export function DatePickerField({
   };
 
   return (
-    <View>
+    <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <Pressable onPress={() => setOpen((o) => !o)} style={styles.field}>
-        <Text style={value ? styles.value : styles.placeholder}>{value || "Any date"}</Text>
+        <Text style={value ? styles.value : styles.placeholder} numberOfLines={1}>
+          {value || "Any date"}
+        </Text>
         <Calendar size={14} color={colors.textFaint} strokeWidth={2} />
       </Pressable>
       {open ? (
-        <View style={styles.calendar}>
-          <View style={styles.calendarHeader}>
-            <Pressable onPress={goPrevMonth} hitSlop={8} style={styles.navButton}>
-              <ChevronLeft size={16} color={colors.textMuted} strokeWidth={2} />
-            </Pressable>
-            <Text style={styles.monthLabel}>{monthLabel}</Text>
-            <Pressable onPress={goNextMonth} hitSlop={8} style={styles.navButton}>
-              <ChevronRight size={16} color={colors.textMuted} strokeWidth={2} />
-            </Pressable>
+        <>
+          {/* Full-screen pressable behind the popover, so tapping anywhere
+              outside it closes it — mirrors the web version's
+              click-outside-to-close dropdown behavior. */}
+          <Pressable style={styles.scrim} onPress={() => setOpen(false)} />
+          <View style={styles.calendar}>
+            <View style={styles.calendarHeader}>
+              <Pressable onPress={goPrevMonth} hitSlop={8} style={styles.navButton}>
+                <ChevronLeft size={16} color={colors.textMuted} strokeWidth={2} />
+              </Pressable>
+              <Text style={styles.monthLabel}>{monthLabel}</Text>
+              <Pressable onPress={goNextMonth} hitSlop={8} style={styles.navButton}>
+                <ChevronRight size={16} color={colors.textMuted} strokeWidth={2} />
+              </Pressable>
+            </View>
+            <View style={styles.weekdayRow}>
+              {WEEKDAYS.map((d, i) => (
+                <Text key={i} style={styles.weekdayText}>
+                  {d}
+                </Text>
+              ))}
+            </View>
+            <View style={styles.grid}>
+              {cells.map((day, i) => {
+                if (day === null) return <View key={i} style={styles.cell} />;
+                const iso = toIso(viewYear, viewMonth, day);
+                const isSelected = iso === value;
+                return (
+                  <Pressable
+                    key={i}
+                    onPress={() => {
+                      onChange(iso);
+                      setOpen(false);
+                    }}
+                    style={styles.cell}
+                  >
+                    <View style={[styles.cellInner, isSelected && styles.cellSelected]}>
+                      <Text style={[styles.cellText, isSelected && styles.cellTextSelected]}>{day}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {value ? (
+              <Pressable
+                onPress={() => {
+                  onChange("");
+                  setOpen(false);
+                }}
+                style={styles.clearButton}
+              >
+                <X size={12} color={colors.textMuted} strokeWidth={2} />
+                <Text style={styles.clearText}>Clear</Text>
+              </Pressable>
+            ) : null}
           </View>
-          <View style={styles.weekdayRow}>
-            {WEEKDAYS.map((d, i) => (
-              <Text key={i} style={styles.weekdayText}>
-                {d}
-              </Text>
-            ))}
-          </View>
-          <View style={styles.grid}>
-            {cells.map((day, i) => {
-              if (day === null) return <View key={i} style={styles.cell} />;
-              const iso = toIso(viewYear, viewMonth, day);
-              const isSelected = iso === value;
-              return (
-                <Pressable
-                  key={i}
-                  onPress={() => {
-                    onChange(iso);
-                    setOpen(false);
-                  }}
-                  style={[styles.cell, isSelected && styles.cellSelected]}
-                >
-                  <Text style={[styles.cellText, isSelected && styles.cellTextSelected]}>{day}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          {value ? (
-            <Pressable
-              onPress={() => {
-                onChange("");
-                setOpen(false);
-              }}
-              style={styles.clearButton}
-            >
-              <X size={12} color={colors.textMuted} strokeWidth={2} />
-              <Text style={styles.clearText}>Clear</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        </>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { position: "relative" },
   label: {
     fontSize: 11,
     fontFamily: fonts.bodyBold,
@@ -138,6 +153,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
@@ -145,15 +161,31 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     backgroundColor: colors.surface,
   },
-  value: { ...typography.body, fontSize: 14, color: colors.text },
-  placeholder: { ...typography.body, fontSize: 14, color: colors.textFaint },
+  value: { ...typography.body, fontSize: 13, color: colors.text, flexShrink: 1 },
+  placeholder: { ...typography.body, fontSize: 13, color: colors.textFaint },
+  // Covers the rest of the modal so an outside tap closes the popover;
+  // sits above the form but below the popover itself (zIndex 15 vs 20).
+  scrim: {
+    position: "absolute",
+    top: -1000,
+    left: -1000,
+    right: -1000,
+    bottom: -1000,
+    zIndex: 15,
+  },
   calendar: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
     marginTop: spacing.xs,
+    width: 260,
+    zIndex: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     backgroundColor: colors.surface,
     padding: spacing.sm,
+    ...shadow.lg,
   },
   calendarHeader: {
     flexDirection: "row",
@@ -163,16 +195,23 @@ const styles = StyleSheet.create({
   },
   navButton: { padding: 4 },
   monthLabel: { ...typography.captionStrong, fontSize: 12, color: colors.text },
-  weekdayRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
+  weekdayRow: { flexDirection: "row" },
   weekdayText: {
-    width: CELL_SIZE,
+    width: CELL_WIDTH,
     textAlign: "center",
     fontSize: 10,
     fontFamily: fonts.bodyBold,
     color: colors.textFaint,
   },
   grid: { flexDirection: "row", flexWrap: "wrap" },
-  cell: { width: CELL_SIZE, height: CELL_SIZE, alignItems: "center", justifyContent: "center", borderRadius: radius.sm },
+  cell: { width: CELL_WIDTH, aspectRatio: 1, alignItems: "center", justifyContent: "center" },
+  cellInner: {
+    width: "82%",
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.full,
+  },
   cellSelected: { backgroundColor: colors.primary },
   cellText: { fontSize: 12, fontFamily: fonts.body, color: colors.text },
   cellTextSelected: { color: colors.primaryText, fontFamily: fonts.bodyBold },

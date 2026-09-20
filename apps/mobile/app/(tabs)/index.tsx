@@ -132,7 +132,7 @@ export default function BrowseScreen() {
           subtitle={debouncedSearch ? "Try a different name, ID, location, or note." : undefined}
           action={
             showEmptyAddCta
-              ? { label: "Add material", icon: Plus, onPress: () => router.push("/(tabs)/admin/items/new") }
+              ? { label: "Add material", icon: Plus, onPress: () => router.push("/item/new") }
               : undefined
           }
         />
@@ -179,7 +179,7 @@ export default function BrowseScreen() {
 
       {isMaxTier && dataSettled && !showEmptyAddCta ? (
         <Pressable
-          onPress={() => router.push("/(tabs)/admin/items/new")}
+          onPress={() => router.push("/item/new")}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         >
           <Plus size={20} color={colors.primaryText} strokeWidth={2.5} />
