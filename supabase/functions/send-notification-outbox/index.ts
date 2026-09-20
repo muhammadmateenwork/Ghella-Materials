@@ -4,8 +4,15 @@
 // Called every minute by the pg_cron job set up in
 // 0012_owner_reservation_workflow.sql, not by end users directly.
 //
-// Rows are marked sent BEFORE the actual send, not after — same
-// miss-rather-than-duplicate tradeoff as send-item-notifications.
+// Push and email are tracked and retried INDEPENDENTLY (push_sent_at /
+// email_sent_at, see 0013_reliable_notification_delivery.sql) — a row is
+// only left alone once whichever of the two channels it needs has actually
+// been confirmed delivered. A transient failure (the recipient's device
+// being offline right at send time, a network blip calling Expo's API, an
+// SMTP hiccup) just leaves it pending for the next run instead of silently
+// dropping it forever. `attempts` caps how many times we'll keep trying a
+// row that's genuinely stuck (e.g. permanently invalid SMTP creds) so a
+// dead channel doesn't retry forever.
 //
 // Kept as ONE file (no supabase/functions/_shared import) — the
 // Dashboard's function editor only uploads the single file you paste in.
@@ -23,6 +30,7 @@ import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 const EXPO_PUSH_CHUNK_SIZE = 100;
 const BATCH_LIMIT = 200;
+const MAX_ATTEMPTS = 30;
 
 function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
@@ -39,6 +47,8 @@ type OutboxRow = {
   push_data: Record<string, unknown> | null;
   email_subject: string | null;
   email_body: string | null;
+  push_sent_at: string | null;
+  email_sent_at: string | null;
 };
 
 Deno.serve(async () => {
@@ -52,8 +62,11 @@ Deno.serve(async () => {
 
   const { data: pending, error: pendingError } = await adminClient
     .from("notification_outbox")
-    .select("id, user_id, push_title, push_body, push_data, email_subject, email_body")
-    .is("sent_at", null)
+    .select(
+      "id, user_id, push_title, push_body, push_data, email_subject, email_body, push_sent_at, email_sent_at"
+    )
+    .lt("attempts", MAX_ATTEMPTS)
+    .or("push_sent_at.is.null,email_sent_at.is.null")
     .order("created_at", { ascending: true })
     .limit(BATCH_LIMIT);
 
@@ -63,23 +76,29 @@ Deno.serve(async () => {
   if (!pending || pending.length === 0) {
     return json({ processed: 0, reason: "nothing pending" }, 200);
   }
-  const rows = pending as OutboxRow[];
-
-  const ids = rows.map((row) => row.id);
-  const { error: markSentError } = await adminClient
-    .from("notification_outbox")
-    .update({ sent_at: new Date().toISOString() })
-    .in("id", ids);
-  if (markSentError) {
-    return json({ error: markSentError.message }, 500);
+  // A row that only needs email (already push_sent) but has no email
+  // configured for this row at all shouldn't have been selected, but
+  // guard anyway: nothing left to actually do for it.
+  const rows = (pending as OutboxRow[]).filter(
+    (row) => !row.push_sent_at || (row.email_subject && !row.email_sent_at)
+  );
+  if (rows.length === 0) {
+    return json({ processed: 0, reason: "nothing pending" }, 200);
   }
 
-  const userIds = [...new Set(rows.map((row) => row.user_id))];
+  const errorsByRow = new Map<string, string>();
+  const pushSucceededRowIds = new Set<string>();
+  const emailSucceededRowIds = new Set<string>();
+  const staleTokens = new Set<string>();
+
+  // ---- Push ----
+  const rowsNeedingPush = rows.filter((row) => !row.push_sent_at);
+  const userIds = [...new Set(rowsNeedingPush.map((row) => row.user_id))];
 
   const { data: tokenRows } = await adminClient
     .from("push_tokens")
     .select("user_id, token")
-    .in("user_id", userIds);
+    .in("user_id", userIds.length > 0 ? userIds : ["00000000-0000-0000-0000-000000000000"]);
   const tokensByUser = new Map<string, string[]>();
   for (const row of tokenRows ?? []) {
     const list = tokensByUser.get(row.user_id) ?? [];
@@ -87,32 +106,76 @@ Deno.serve(async () => {
     tokensByUser.set(row.user_id, list);
   }
 
-  const pushMessages = rows.flatMap((row) =>
-    (tokensByUser.get(row.user_id) ?? []).map((token) => ({
-      to: token,
-      sound: "default",
-      title: row.push_title,
-      body: row.push_body,
-      data: row.push_data ?? {},
-    }))
-  );
-
-  for (let i = 0; i < pushMessages.length; i += EXPO_PUSH_CHUNK_SIZE) {
-    const chunk = pushMessages.slice(i, i + EXPO_PUSH_CHUNK_SIZE);
-    try {
-      await fetch(EXPO_PUSH_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(chunk),
+  // Flattened so each Expo API ticket in the response can be matched back
+  // to the exact row + token that produced it.
+  const pushEntries: { rowId: string; token: string }[] = [];
+  const pushMessages: Record<string, unknown>[] = [];
+  for (const row of rowsNeedingPush) {
+    const tokens = tokensByUser.get(row.user_id) ?? [];
+    if (tokens.length === 0) {
+      // Nothing to push to — this device-less user's push requirement is
+      // trivially satisfied rather than retried forever.
+      pushSucceededRowIds.add(row.id);
+      continue;
+    }
+    for (const token of tokens) {
+      pushEntries.push({ rowId: row.id, token });
+      pushMessages.push({
+        to: token,
+        sound: "default",
+        title: row.push_title,
+        body: row.push_body,
+        data: row.push_data ?? {},
       });
-    } catch (err) {
-      console.error("Expo push send failed:", err instanceof Error ? err.message : err);
     }
   }
 
-  const emailRows = rows.filter((row) => row.email_subject && row.email_body);
-  let emailsSent = 0;
+  for (let i = 0; i < pushMessages.length; i += EXPO_PUSH_CHUNK_SIZE) {
+    const chunkEntries = pushEntries.slice(i, i + EXPO_PUSH_CHUNK_SIZE);
+    const chunkMessages = pushMessages.slice(i, i + EXPO_PUSH_CHUNK_SIZE);
+    try {
+      const res = await fetch(EXPO_PUSH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(chunkMessages),
+      });
+      if (!res.ok) {
+        const message = `Expo push API returned ${res.status}`;
+        for (const entry of chunkEntries) errorsByRow.set(entry.rowId, message);
+        continue;
+      }
+      const body = (await res.json()) as { data?: { status: string; details?: { error?: string } }[] };
+      const tickets = body.data ?? [];
+      tickets.forEach((ticket, idx) => {
+        const entry = chunkEntries[idx];
+        if (!entry) return;
+        if (ticket.status === "ok") {
+          pushSucceededRowIds.add(entry.rowId);
+        } else {
+          if (ticket.details?.error === "DeviceNotRegistered") staleTokens.add(entry.token);
+          else errorsByRow.set(entry.rowId, ticket.details?.error ?? "Push delivery failed");
+        }
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Expo push request failed";
+      for (const entry of chunkEntries) errorsByRow.set(entry.rowId, message);
+      console.error("Expo push send failed:", message);
+    }
+  }
 
+  if (staleTokens.size > 0) {
+    await adminClient.from("push_tokens").delete().in("token", [...staleTokens]);
+  }
+  // A row whose only tokens were all stale (DeviceNotRegistered, now
+  // removed) has nothing left to push to — same as having zero tokens.
+  for (const row of rowsNeedingPush) {
+    if (pushSucceededRowIds.has(row.id) || errorsByRow.has(row.id)) continue;
+    const tokens = tokensByUser.get(row.user_id) ?? [];
+    if (tokens.length > 0 && tokens.every((t) => staleTokens.has(t))) pushSucceededRowIds.add(row.id);
+  }
+
+  // ---- Email ----
+  const emailRows = rows.filter((row) => row.email_subject && row.email_body && !row.email_sent_at);
   if (emailRows.length > 0) {
     const smtpUser = Deno.env.get("SMTP_USER");
     const smtpPassword = Deno.env.get("SMTP_PASSWORD");
@@ -123,10 +186,7 @@ Deno.serve(async () => {
       const { data: profileRows } = await adminClient
         .from("profiles")
         .select("id, email")
-        .in(
-          "id",
-          [...new Set(emailRows.map((row) => row.user_id))]
-        );
+        .in("id", [...new Set(emailRows.map((row) => row.user_id))]);
       const emailByUser = new Map<string, string>();
       for (const row of profileRows ?? []) emailByUser.set(row.id, row.email);
 
@@ -136,7 +196,11 @@ Deno.serve(async () => {
 
       for (const row of emailRows) {
         const to = emailByUser.get(row.user_id);
-        if (!to) continue;
+        if (!to) {
+          // No profile/email to send to (deleted user) — nothing to retry.
+          emailSucceededRowIds.add(row.id);
+          continue;
+        }
         try {
           await client.send({
             from: `Ghella Materials <${smtpUser}>`,
@@ -144,9 +208,11 @@ Deno.serve(async () => {
             subject: row.email_subject as string,
             content: row.email_body as string,
           });
-          emailsSent += 1;
+          emailSucceededRowIds.add(row.id);
         } catch (err) {
-          console.error("Notification email send failed:", err instanceof Error ? err.message : err);
+          const message = err instanceof Error ? err.message : "Email send failed";
+          errorsByRow.set(row.id, errorsByRow.has(row.id) ? `${errorsByRow.get(row.id)}; ${message}` : message);
+          console.error("Notification email send failed:", message);
         }
       }
 
@@ -156,9 +222,41 @@ Deno.serve(async () => {
         // Already closed/failed to connect — nothing to clean up.
       }
     } else {
-      console.error("SMTP_USER / SMTP_PASSWORD not configured — skipped", emailRows.length, "email(s)");
+      const message = "SMTP_USER / SMTP_PASSWORD not configured";
+      for (const row of emailRows) errorsByRow.set(row.id, message);
+      console.error(message, "— skipped", emailRows.length, "email(s)");
     }
   }
 
-  return json({ processed: rows.length, pushSent: pushMessages.length, emailsSent }, 200);
+  // ---- Persist outcomes ----
+  const now = new Date().toISOString();
+  if (pushSucceededRowIds.size > 0) {
+    await adminClient.from("notification_outbox").update({ push_sent_at: now }).in("id", [...pushSucceededRowIds]);
+  }
+  if (emailSucceededRowIds.size > 0) {
+    await adminClient.from("notification_outbox").update({ email_sent_at: now }).in("id", [...emailSucceededRowIds]);
+  }
+  // Every row we actually looked at this run counts as an attempt,
+  // whether or not it fully succeeded — this is what makes MAX_ATTEMPTS
+  // eventually stop retrying a row that's permanently broken.
+  for (const row of rows) {
+    const stillPending =
+      (!row.push_sent_at && !pushSucceededRowIds.has(row.id)) ||
+      (row.email_subject && !row.email_sent_at && !emailSucceededRowIds.has(row.id));
+    if (!stillPending) continue;
+    await adminClient.rpc("increment_notification_outbox_attempts", {
+      p_id: row.id,
+      p_error: errorsByRow.get(row.id) ?? null,
+    });
+  }
+
+  return json(
+    {
+      processed: rows.length,
+      pushSucceeded: pushSucceededRowIds.size,
+      emailSucceeded: emailSucceededRowIds.size,
+      staleTokensRemoved: staleTokens.size,
+    },
+    200
+  );
 });
