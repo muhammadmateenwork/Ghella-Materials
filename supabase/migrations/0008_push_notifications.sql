@@ -51,19 +51,22 @@ create policy "pending_item_notifications: authenticated insert" on public.pendi
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
+-- The project URL and publishable key are read from Supabase Vault on every
+-- run (secrets "project_url" and "publishable_key" — see supabase/SETUP.md)
+-- rather than hardcoded, so this works unchanged on any Supabase project.
+-- The publishable key is the same public key shipped in every client build;
+-- it only gets the request PAST Supabase's gateway JWT check — the function
+-- itself uses its own service-role secret for the actual work, same as
+-- every other edge function in this project.
 select cron.schedule(
   'flush-item-notifications',
   '*/2 * * * *',
   $$
   select net.http_post(
-    url := 'https://vwwwfjcbqfdrwkowipzq.supabase.co/functions/v1/send-item-notifications',
+    url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url')
+      || '/functions/v1/send-item-notifications',
     headers := jsonb_build_object(
-      -- The anon key is safe to embed here — it's the same public,
-      -- publishable key already shipped in every client build. It only
-      -- gets the request PAST Supabase's gateway JWT check; the function
-      -- itself uses its own service-role secret for the actual work,
-      -- same as every other edge function in this project.
-      'Authorization', 'Bearer sb_publishable_J8mSfnyoOn84qHEavn0HlA_ylf0QKZR',
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'publishable_key'),
       'Content-Type', 'application/json'
     ),
     body := '{}'::jsonb

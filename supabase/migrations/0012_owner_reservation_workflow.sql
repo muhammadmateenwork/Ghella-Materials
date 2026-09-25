@@ -271,14 +271,16 @@ create trigger items_notify_reservers_on_delete
   before delete on public.items
   for each row execute function public.notify_reservers_of_item_delete();
 
+-- URL and key come from Vault, same as 0008's job (see supabase/SETUP.md).
 select cron.schedule(
   'flush-notification-outbox',
   '* * * * *',
   $$
   select net.http_post(
-    url := 'https://vwwwfjcbqfdrwkowipzq.supabase.co/functions/v1/send-notification-outbox',
+    url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url')
+      || '/functions/v1/send-notification-outbox',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer sb_publishable_J8mSfnyoOn84qHEavn0HlA_ylf0QKZR',
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'publishable_key'),
       'Content-Type', 'application/json'
     ),
     body := '{}'::jsonb
