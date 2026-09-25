@@ -35,7 +35,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       {options ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-sm border border-border bg-surface p-5 shadow-[0_8px_32px_rgba(20,33,61,0.2)]">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-sm border border-border bg-surface p-5 shadow-[0_8px_32px_rgba(20,33,61,0.2)]">
             <p className="mb-1.5 text-lg font-bold text-text">{options.title}</p>
             {options.message ? <p className="mb-5 text-sm text-text-muted">{options.message}</p> : <div className="mb-5" />}
             <div className="flex justify-end gap-2">

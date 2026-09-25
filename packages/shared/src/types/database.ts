@@ -152,6 +152,9 @@ export interface Database {
           user_id: string | null;
           quantity: number;
           contact_info: string | null;
+          // Optional free-text message to the material's owner (pick-up
+          // arrangements, drop-off, who it's assigned to...) — see 0014.
+          comments: string | null;
           status: ReservationStatus;
           created_at: string;
           cancelled_at: string | null;
@@ -162,6 +165,7 @@ export interface Database {
           user_id: string;
           quantity: number;
           contact_info?: string | null;
+          comments?: string | null;
         };
         Update: {
           status?: ReservationStatus;
@@ -242,12 +246,17 @@ export interface Database {
           p_item_id: string;
           p_quantity: number;
           p_contact_info?: string | null;
+          p_comments?: string | null;
         };
         Returns: Database["public"]["Tables"]["reservations"]["Row"];
       };
       cancel_reservation: {
         Args: { p_reservation_id: string };
         Returns: Database["public"]["Tables"]["reservations"]["Row"];
+      };
+      register_push_token: {
+        Args: { p_token: string };
+        Returns: undefined;
       };
       is_max_tier: {
         Args: Record<string, never>;

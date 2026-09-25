@@ -106,7 +106,7 @@ export default function BrowsePage() {
             value={statsQuery.data.unitsAvailable}
             label="Units available"
             icon={PackageCheck}
-            tone="success"
+            tone="accent"
           />
           <div className="col-span-2 sm:col-span-1">
             <StatTile
@@ -197,7 +197,7 @@ export default function BrowsePage() {
               type="button"
               onClick={() => router.push("/admin/items/new")}
               aria-label="Add material"
-              className="fixed bottom-20 right-4 z-40 flex h-14 items-center gap-2 rounded-full bg-primary pl-4 pr-5 text-primary-text shadow-[0_4px_16px_rgba(20,33,61,0.3)] transition-transform hover:-translate-y-0.5 active:scale-95 md:bottom-8 md:right-8"
+              className="fixed bottom-[calc(var(--mobile-tab-bar-height,5rem)+1rem)] right-4 z-40 flex h-14 items-center gap-2 rounded-full bg-primary pl-4 pr-5 text-primary-text shadow-[0_4px_16px_rgba(20,33,61,0.3)] transition-transform hover:-translate-y-0.5 active:scale-95 md:bottom-8 md:right-8"
             >
               <Plus size={22} strokeWidth={2.5} />
               <span className="text-sm font-bold uppercase tracking-wide">Add Material</span>

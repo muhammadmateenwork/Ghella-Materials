@@ -36,6 +36,9 @@
   --color-danger-soft: #FADBDA;
   --color-warning: #B8860B;
   --color-warning-soft: #F3E8C8;
+  /* "Active" status (reservations) — distinct from cancelled grey. */
+  --color-teal: #0F766E;
+  --color-teal-soft: #D5F0EE;
 }
 
 @theme inline {
@@ -65,6 +68,8 @@
   --color-danger-soft: var(--color-danger-soft);
   --color-warning: var(--color-warning);
   --color-warning-soft: var(--color-warning-soft);
+  --color-teal: var(--color-teal);
+  --color-teal-soft: var(--color-teal-soft);
 
   --font-display: var(--font-display);
   --font-body: var(--font-body);

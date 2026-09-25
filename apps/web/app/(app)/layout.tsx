@@ -98,7 +98,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 min-h-dvh flex-1 flex-col md:ml-64">
-        <main className="min-w-0 flex-1 p-4 pb-24 md:p-8 md:pb-8">
+        {/* Bottom padding clears the fixed MobileTabBar by its measured
+            height (--mobile-tab-bar-height, set by the bar itself), plus a
+            normal gap — so the last button on a page (e.g. "Add item") is
+            never hidden behind it, on any device. */}
+        <main className="min-w-0 flex-1 p-4 pb-[calc(var(--mobile-tab-bar-height,5rem)+1.5rem)] md:p-8 md:pb-8">
           <div key={pathname} className="page-transition mx-auto w-full max-w-5xl">
             {children}
           </div>

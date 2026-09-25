@@ -10,6 +10,7 @@ import { PageHeading } from "../../src/components/PageHeading";
 import { PasswordField } from "../../src/components/PasswordField";
 import { Screen } from "../../src/components/Screen";
 import { useToast } from "../../src/components/Toast";
+import { getRegisteredPushToken } from "../../src/lib/pushNotifications";
 import { colors, fonts, radius, spacing, shadow, typography } from "../../src/lib/theme";
 
 export default function ProfileScreen() {
@@ -26,7 +27,7 @@ export default function ProfileScreen() {
 
   const handleSignOut = async () => {
     const confirmed = await confirmDialog({ title: "Sign out?", confirmLabel: "Sign out", danger: true });
-    if (confirmed) signOut.mutate();
+    if (confirmed) signOut.mutate({ pushToken: getRegisteredPushToken() });
   };
 
   const handleChangePassword = () => {

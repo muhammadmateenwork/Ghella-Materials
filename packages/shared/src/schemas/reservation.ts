@@ -13,6 +13,9 @@ export function reservationFormSchema(maxQuantity: number, allowDecimal = true) 
       .max(maxQuantity, `Only ${maxQuantity} available`)
       .refine((value) => allowDecimal || Number.isInteger(value), "This material can't be split into fractions — enter a whole number"),
     contact_info: z.string().trim().min(1, "Contact info is required"),
+    // Optional message to the material's owner — pick-up arrangements,
+    // drop-off, who it's being assigned to, etc.
+    comments: z.string().trim().max(1000, "Keep comments under 1000 characters").optional().or(z.literal("")),
   });
 }
 export type ReservationFormInput = z.infer<ReturnType<typeof reservationFormSchema>>;

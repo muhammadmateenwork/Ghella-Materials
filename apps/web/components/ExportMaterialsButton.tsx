@@ -72,7 +72,7 @@ export function ExportMaterialsButton({ ownedByUserId }: { ownedByUserId?: strin
         ? createPortal(
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" onClick={() => setOpen(false)}>
           <div
-            className="w-full max-w-sm rounded-md bg-surface p-5 shadow-[0_20px_60px_rgba(12,21,38,0.35)]"
+            className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-md bg-surface p-5 shadow-[0_20px_60px_rgba(12,21,38,0.35)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">

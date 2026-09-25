@@ -98,11 +98,13 @@ export function useReserveItem() {
       itemId: string;
       quantity: number;
       contactInfo: string;
+      comments?: string;
     }) => {
       const { data, error } = await supabase.rpc("reserve_item", {
         p_item_id: input.itemId,
         p_quantity: input.quantity,
         p_contact_info: input.contactInfo,
+        p_comments: input.comments?.trim() || null,
       });
       if (error) throw error;
       return data as Reservation;

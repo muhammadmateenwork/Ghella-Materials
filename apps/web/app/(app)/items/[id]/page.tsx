@@ -43,6 +43,7 @@ export default function ItemDetailPage() {
   const [quantity, setQuantity] = useState("1");
   const [contactInfo, setContactInfo] = useState("");
   const [contactInfoTouched, setContactInfoTouched] = useState(false);
+  const [comments, setComments] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -93,6 +94,7 @@ export default function ItemDetailPage() {
     const result = reservationFormSchema(available, allowDecimal).safeParse({
       quantity,
       contact_info: contactInfo,
+      comments,
     });
     if (!result.success) {
       const errors: Record<string, string> = {};
@@ -102,10 +104,16 @@ export default function ItemDetailPage() {
     }
     setFieldErrors({});
     reserveItem.mutate(
-      { itemId: item.id, quantity: result.data.quantity, contactInfo: result.data.contact_info },
+      {
+        itemId: item.id,
+        quantity: result.data.quantity,
+        contactInfo: result.data.contact_info,
+        comments: result.data.comments,
+      },
       {
         onSuccess: async () => {
           setQuantity("1");
+          setComments("");
           await showSuccess(`Reserved ${result.data.quantity} x ${item.name}`);
         },
         onError: (error) => setFormError(getFriendlyErrorMessage(error)),
@@ -164,7 +172,7 @@ export default function ItemDetailPage() {
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               <Badge
                 label={`${formatQuantity(available, null, false)} of ${formatQuantity(item.quantity, item.unit, item.is_approximate)} available`}
-                tone={available > 0 ? "success" : "danger"}
+                tone={available > 0 ? "accent" : "danger"}
               />
               {isOwner ? (
                 <div className="flex items-center gap-1">
@@ -260,6 +268,14 @@ export default function ItemDetailPage() {
                   setContactInfo(e.target.value);
                 }}
                 error={fieldErrors.contact_info}
+              />
+              <TextAreaField
+                label="Comments (optional)"
+                rows={3}
+                maxLength={1000}
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                error={fieldErrors.comments}
               />
               {formError ? <p className="mb-4 text-sm font-semibold text-danger">{formError}</p> : null}
               <Button type="submit" loading={reserveItem.isPending}>

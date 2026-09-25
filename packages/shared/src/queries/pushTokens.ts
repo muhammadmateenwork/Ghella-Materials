@@ -1,13 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
+import type { GhellaSupabaseClient } from "../supabase/client";
 import { useSession, useSupabaseClient } from "../supabase/context";
 
 /**
- * Registers (or re-associates) this device's Expo push token so it starts
- * receiving new-material notifications — every user can browse the full
- * catalog, so these aren't scoped to a specific person. Upserts on the
- * token itself: re-registering the same device after signing in as a
- * different user re-points that one row rather than accumulating
- * duplicates.
+ * Registers this device's Expo push token to the signed-in user, so it
+ * receives both the catalog-wide "new material" pushes and that user's own
+ * notifications. Goes through the register_push_token RPC (0014) rather
+ * than a direct upsert: the token is unique per device, and RLS only lets a
+ * user modify rows they already own — so a direct upsert couldn't re-point
+ * a device that the previous user on this phone had registered.
  */
 export function useRegisterPushToken() {
   const supabase = useSupabaseClient();
@@ -16,10 +17,19 @@ export function useRegisterPushToken() {
   return useMutation({
     mutationFn: async (token: string) => {
       if (!session?.user.id) return;
-      const { error } = await supabase
-        .from("push_tokens")
-        .upsert({ user_id: session.user.id, token }, { onConflict: "token" });
+      const { error } = await supabase.rpc("register_push_token", { p_token: token });
       if (error) throw error;
     },
   });
+}
+
+/**
+ * Removes this device's token from the signed-in user, so a phone that's
+ * been signed out stops receiving that user's personal notifications. Must
+ * run BEFORE signing out — RLS only allows deleting your own rows, which
+ * needs the session.
+ */
+export async function unregisterPushToken(supabase: GhellaSupabaseClient, token: string) {
+  const { error } = await supabase.from("push_tokens").delete().eq("token", token);
+  if (error) throw error;
 }

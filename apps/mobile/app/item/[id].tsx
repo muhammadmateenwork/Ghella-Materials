@@ -56,6 +56,7 @@ export default function ItemDetailScreen() {
   const [quantity, setQuantity] = useState("1");
   const [contactInfo, setContactInfo] = useState("");
   const [contactInfoTouched, setContactInfoTouched] = useState(false);
+  const [comments, setComments] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [activePhoto, setActivePhoto] = useState(0);
@@ -115,6 +116,7 @@ export default function ItemDetailScreen() {
     const result = reservationFormSchema(available, allowDecimal).safeParse({
       quantity,
       contact_info: contactInfo,
+      comments,
     });
     if (!result.success) {
       const errors: Record<string, string> = {};
@@ -131,6 +133,7 @@ export default function ItemDetailScreen() {
         itemId: item.id,
         quantity: result.data.quantity,
         contactInfo: result.data.contact_info,
+        comments: result.data.comments,
       },
       {
         onSuccess: async () => {
@@ -191,7 +194,7 @@ export default function ItemDetailScreen() {
           <View style={styles.titleMetaRow}>
             <Badge
               label={`${formatQuantity(available, null, false)} of ${formatQuantity(item.quantity, item.unit, item.is_approximate)} available`}
-              tone={available > 0 ? "success" : "danger"}
+              tone={available > 0 ? "accent" : "danger"}
             />
             {isOwner ? (
               <View style={styles.ownerActions}>
@@ -282,6 +285,15 @@ export default function ItemDetailScreen() {
               multiline
               numberOfLines={3}
               error={fieldErrors.contact_info}
+            />
+            <TextField
+              label="Comments (optional)"
+              value={comments}
+              onChangeText={setComments}
+              multiline
+              numberOfLines={3}
+              maxLength={1000}
+              error={fieldErrors.comments}
             />
             {formError ? <Text style={styles.formError}>{formError}</Text> : null}
             <Button

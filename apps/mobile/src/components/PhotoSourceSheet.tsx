@@ -1,7 +1,7 @@
 import { Camera, Image as ImageIcon } from "lucide-react-native";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomInset } from "../lib/safeArea";
 import { colors, radius, shadow, spacing, typography } from "../lib/theme";
 
 export type PhotoSource = "camera" | "library" | null;
@@ -15,13 +15,9 @@ const PhotoSourceContext = createContext<PhotoSourceFn | null>(null);
 // visually separated, the way an iOS action sheet (not a plain alert)
 // actually does it.
 export function PhotoSourceProvider({ children }: { children: ReactNode }) {
-  const insets = useSafeAreaInsets();
-  // Some devices under-report (or briefly zero out) the bottom safe-area
-  // inset for the gesture/button nav bar — same issue already worked
-  // around on the tab bar. Without a floor here, the Cancel row could
-  // render with too little clearance and end up sitting under/behind the
-  // system nav bar instead of just above it.
-  const bottomInset = Math.max(insets.bottom, 20);
+  // Floored inset, so the Cancel row always clears the system nav bar even
+  // on devices that under-report it.
+  const bottomInset = useBottomInset();
   const [visible, setVisible] = useState(false);
   const resolver = useRef<(value: PhotoSource) => void>(null);
   const anim = useRef(new Animated.Value(0)).current;

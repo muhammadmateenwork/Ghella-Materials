@@ -24,6 +24,7 @@ type ExportReservation = {
   quantity: number;
   status: "active" | "cancelled";
   contact_info: string | null;
+  comments: string | null;
   created_at: string;
   cancelled_at: string | null;
   user: { name: string; email: string } | null;
@@ -50,7 +51,7 @@ export async function fetchItemsForExport(
   filters: ExportFilters
 ): Promise<ExportItemRow[]> {
   const reservationSelect = filters.includeReservationDetails
-    ? "reservations(quantity, status, contact_info, created_at, cancelled_at, user:profiles(name, email))"
+    ? "reservations(quantity, status, contact_info, comments, created_at, cancelled_at, user:profiles(name, email))"
     : "reservations(quantity, status)";
 
   let query = supabase
@@ -170,6 +171,7 @@ export async function itemsToXlsx(
       "Reserver Email",
       "Reserved Qty",
       "Contact Info",
+      "Comments",
       "Reserved At",
     ];
     const rows: Row[] = [];
@@ -178,7 +180,7 @@ export async function itemsToXlsx(
       const path = getLocationPath(locations, item.location_id);
       const active = (item.reservations ?? []).filter((r) => r.status === "active");
       if (active.length === 0) {
-        rows.push(dataRow([item.name, item.identification_number, path, item.quantity, item.unit, item.condition, "", "", "", "", ""], i++, new Set([3, 8])));
+        rows.push(dataRow([item.name, item.identification_number, path, item.quantity, item.unit, item.condition, "", "", "", "", "", ""], i++, new Set([3, 8])));
         continue;
       }
       for (const r of active) {
@@ -195,6 +197,7 @@ export async function itemsToXlsx(
               r.user?.email ?? "",
               r.quantity,
               r.contact_info,
+              r.comments,
               new Date(r.created_at).toLocaleString(),
             ],
             i++,
@@ -205,7 +208,7 @@ export async function itemsToXlsx(
     }
     return writeXlsxFile(
       [titleBand("GHELLA MATERIALS", headers.length), subtitleBand(generatedAt(), headers.length), headerRow(headers), ...rows],
-      { columns: [{ width: 22 }, { width: 14 }, { width: 22 }, { width: 10 }, { width: 10 }, { width: 14 }, { width: 18 }, { width: 24 }, { width: 12 }, { width: 26 }, { width: 18 }] }
+      { columns: [{ width: 22 }, { width: 14 }, { width: 22 }, { width: 10 }, { width: 10 }, { width: 14 }, { width: 18 }, { width: 24 }, { width: 12 }, { width: 26 }, { width: 30 }, { width: 18 }] }
     ).toBlob();
   }
 
@@ -255,15 +258,15 @@ export async function itemsToXlsx(
  * shortcut, which already has this data in hand and doesn't need a fresh
  * fetch. */
 export async function reservationsToXlsx(itemName: string, reservations: ReservationWithDetails[]): Promise<Blob> {
-  const headers = ["Material", "Reserved By", "Reserver Email", "Reserved Qty", "Contact Info", "Reserved At"];
+  const headers = ["Material", "Reserved By", "Reserver Email", "Reserved Qty", "Contact Info", "Comments", "Reserved At"];
   const rows = reservations.map((r, i) =>
     dataRow(
-      [itemName, r.user?.name ?? "Deleted user", r.user?.email ?? "", r.quantity, r.contact_info, new Date(r.created_at).toLocaleString()],
+      [itemName, r.user?.name ?? "Deleted user", r.user?.email ?? "", r.quantity, r.contact_info, r.comments, new Date(r.created_at).toLocaleString()],
       i,
       new Set([3])
     )
   );
   return writeXlsxFile([titleBand("GHELLA MATERIALS", headers.length), subtitleBand(generatedAt(), headers.length), headerRow(headers), ...rows], {
-    columns: [{ width: 22 }, { width: 18 }, { width: 26 }, { width: 12 }, { width: 26 }, { width: 18 }],
+    columns: [{ width: 22 }, { width: 18 }, { width: 26 }, { width: 12 }, { width: 26 }, { width: 30 }, { width: 18 }],
   }).toBlob();
 }

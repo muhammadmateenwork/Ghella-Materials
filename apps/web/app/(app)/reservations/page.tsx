@@ -147,7 +147,7 @@ export default function ReservationsPage() {
                       )}
                       <Badge
                         label={reservation.status === "active" ? "Active" : "Cancelled"}
-                        tone={reservation.status === "active" ? "success" : "neutral"}
+                        tone={reservation.status === "active" ? "teal" : "neutral"}
                       />
                     </div>
                     {reservation.item?.identification_number ? (

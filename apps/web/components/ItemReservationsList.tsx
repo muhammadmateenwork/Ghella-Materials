@@ -130,6 +130,15 @@ export function ItemReservationsList({
                 </div>
               ) : null}
 
+              {r.comments ? (
+                <div className="mt-2 rounded-sm border border-border bg-surface-alt p-2.5">
+                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-text-faint">
+                    <MessageSquare size={11} strokeWidth={2} /> Comments
+                  </p>
+                  <p className="whitespace-pre-wrap break-words text-sm text-text">{r.comments}</p>
+                </div>
+              ) : null}
+
               <div className="mt-3 flex justify-end border-t border-border pt-3">
                 <button
                   type="button"

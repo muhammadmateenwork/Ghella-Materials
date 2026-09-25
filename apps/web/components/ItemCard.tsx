@@ -154,7 +154,7 @@ export function ItemCard({
         <div className="mt-1 flex items-center gap-2">
           <Badge
             label={`${formatQuantity(available, item.unit, item.is_approximate)} available`}
-            tone={available > 0 ? "success" : "danger"}
+            tone={available > 0 ? "accent" : "danger"}
           />
           {item.condition ? <span className="truncate text-xs text-text-faint">{item.condition}</span> : null}
         </div>

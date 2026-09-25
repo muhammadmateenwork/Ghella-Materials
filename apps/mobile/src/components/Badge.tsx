@@ -1,10 +1,14 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, fonts, spacing } from "../lib/theme";
 
-type Tone = "primary" | "success" | "danger" | "warning" | "neutral";
+type Tone = "primary" | "accent" | "teal" | "success" | "danger" | "warning" | "neutral";
 
 const TONE_STYLES: Record<Tone, { bg: string; fg: string; border: string }> = {
   primary: { bg: colors.primarySoft, fg: colors.primaryDark, border: colors.primary },
+  // Brand navy — for positive/neutral states (available, active), which the
+  // green success tone clashed with on the navy/orange theme.
+  accent: { bg: colors.accentSoft, fg: colors.accent, border: colors.accent },
+  teal: { bg: colors.tealSoft, fg: colors.teal, border: colors.teal },
   success: { bg: colors.successSoft, fg: colors.success, border: colors.success },
   danger: { bg: colors.dangerSoft, fg: colors.danger, border: colors.danger },
   warning: { bg: colors.warningSoft, fg: colors.warning, border: colors.warning },

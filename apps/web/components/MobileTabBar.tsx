@@ -3,6 +3,7 @@
 import { LayoutGrid, Package, Shield, User, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 const TABS: { href: string; label: string; icon: LucideIcon; adminOnly?: boolean }[] = [
   { href: "/browse", label: "Browse", icon: LayoutGrid },
@@ -18,9 +19,29 @@ const TABS: { href: string; label: string; icon: LucideIcon; adminOnly?: boolean
 export function MobileTabBar({ isMaxTier }: { isMaxTier: boolean }) {
   const pathname = usePathname();
   const tabs = TABS.filter((tab) => !tab.adminOnly || isMaxTier);
+  const navRef = useRef<HTMLElement>(null);
+
+  // Publishes the bar's real rendered height (safe-area inset included) as
+  // --mobile-tab-bar-height, so page padding and floating buttons clear it
+  // by measurement rather than a guessed constant — whatever the device,
+  // font size or browser chrome. 0 when hidden (md+ screens).
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const root = document.documentElement;
+    const update = () => root.style.setProperty("--mobile-tab-bar-height", `${nav.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(nav);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--mobile-tab-bar-height");
+    };
+  }, []);
 
   return (
     <nav
+      ref={navRef}
       className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-surface pb-[max(env(safe-area-inset-bottom),8px)] pt-1.5 md:hidden"
       // Forces its own GPU compositing layer — without this, some Android
       // Chrome versions let a position:fixed element visually detach from

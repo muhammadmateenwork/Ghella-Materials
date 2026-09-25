@@ -32,6 +32,10 @@ export const colors = {
   dangerSoft: "#FADBDA",
   warning: "#B8860B",
   warningSoft: "#F3E8C8",
+  // "Active" status (reservations) — distinct from the grey of cancelled,
+  // and cooler than success green so it sits well beside the orange.
+  teal: "#0F766E",
+  tealSoft: "#D5F0EE",
 };
 
 export const spacing = {

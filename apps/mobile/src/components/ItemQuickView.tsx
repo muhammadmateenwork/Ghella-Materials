@@ -64,7 +64,7 @@ export function ItemQuickView({
                 </Text>
                 <Badge
                   label={`${formatQuantity(available, item.unit, item.is_approximate)} available`}
-                  tone={available > 0 ? "success" : "danger"}
+                  tone={available > 0 ? "accent" : "danger"}
                 />
               </View>
 
@@ -78,7 +78,7 @@ export function ItemQuickView({
                   </View>
                   <Badge
                     label={myReservation.status === "active" ? "Active" : "Cancelled"}
-                    tone={myReservation.status === "active" ? "success" : "neutral"}
+                    tone={myReservation.status === "active" ? "teal" : "neutral"}
                   />
                 </View>
               ) : null}

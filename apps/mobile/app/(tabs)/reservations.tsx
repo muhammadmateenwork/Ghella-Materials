@@ -151,7 +151,7 @@ export default function MyReservationsScreen() {
                     </Text>
                     <Badge
                       label={reservation.status === "active" ? "Active" : "Cancelled"}
-                      tone={reservation.status === "active" ? "success" : "neutral"}
+                      tone={reservation.status === "active" ? "teal" : "neutral"}
                     />
                   </View>
                   {reservation.item?.identification_number ? (

@@ -115,6 +115,16 @@ export function ItemReservationsList({
                 </View>
               ) : null}
 
+              {r.comments ? (
+                <View style={styles.contactBox}>
+                  <View style={styles.contactLabelRow}>
+                    <MessageSquare size={11} color={colors.textFaint} strokeWidth={2} />
+                    <Text style={styles.contactLabel}>Comments</Text>
+                  </View>
+                  <Text style={styles.contactInfo}>{r.comments}</Text>
+                </View>
+              ) : null}
+
               <View style={styles.cancelRow}>
                 <Pressable
                   onPress={() => handleCancel(r.id, name)}

@@ -81,7 +81,7 @@ export function ItemCard({
         <View style={styles.badgeRow}>
           <Badge
             label={`${formatQuantity(available, item.unit, item.is_approximate)} available`}
-            tone={available > 0 ? "success" : "danger"}
+            tone={available > 0 ? "accent" : "danger"}
           />
           {item.condition ? (
             <Text style={styles.condition} numberOfLines={1}>

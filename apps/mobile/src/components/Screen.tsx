@@ -1,6 +1,5 @@
-import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
-  findNodeHandle,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -9,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useBottomInset } from "../lib/safeArea";
 import { colors, spacing } from "../lib/theme";
 
 // Android's windowSoftInputMode "resize" (set in app.json) is unreliable
@@ -43,31 +43,45 @@ export function useKeyboardHeight(): number {
   return keyboardHeight;
 }
 
+/** Set to true by the (tabs) layout, so a Screen knows the tab bar below it
+ * already clears the device's nav bar. */
+export const InsideTabBarContext = createContext(false);
+
 export function Screen({
   children,
   scroll = false,
   padded = true,
-  bottomSafeArea = false,
+  bottomSafeArea,
 }: {
   children: ReactNode;
   scroll?: boolean;
   padded?: boolean;
   // Screens rendered without a tab bar beneath them (auth screens, item
-  // detail) get no bottom safe-area padding from anything else, so their
-  // last button can end up flush against the device's gesture bar/nav
-  // buttons. Tab-bar screens leave this off since the tab bar already
-  // reserves that space.
+  // detail, add/edit material) get no bottom safe-area padding from
+  // anything else, so their last button ends up under the device's gesture
+  // bar/nav buttons. Defaults to on for exactly those screens — anything
+  // outside the (tabs) layout — so a new screen can't forget it (Add/Edit
+  // material both did, hiding their submit button on Android). Pass it
+  // explicitly only to override that.
   bottomSafeArea?: boolean;
 }) {
+  const insideTabBar = useContext(InsideTabBarContext);
+  const deviceBottomInset = useBottomInset();
+  const bottomInset = (bottomSafeArea ?? !insideTabBar) ? deviceBottomInset : 0;
   const scrollRef = useRef<ScrollView>(null);
+  // Measured against the ScrollView's inner content view, so the y offset
+  // comes back in content coordinates — exactly what scrollTo expects. The
+  // New Architecture only accepts a component ref here, not the numeric
+  // findNodeHandle() handle the old architecture allowed.
+  const contentRef = useRef<View>(null);
   const focusedNodeRef = useRef<unknown>(null);
   const keyboardHeight = useKeyboardHeight();
 
   const scrollFieldIntoView = (node: unknown) => {
-    const scrollHandle = findNodeHandle(scrollRef.current);
-    if (!node || !scrollHandle) return;
+    const content = contentRef.current;
+    if (!node || !content) return;
     (node as { measureLayout: (...args: unknown[]) => void }).measureLayout(
-      scrollHandle,
+      content,
       (_x: number, y: number) => {
         scrollRef.current?.scrollTo({ y: Math.max(y - spacing.md, 0), animated: true });
       },
@@ -88,10 +102,7 @@ export function Screen({
   };
 
   return (
-    <SafeAreaView
-      style={styles.safeArea}
-      edges={bottomSafeArea ? ["top", "left", "right", "bottom"] : ["top", "left", "right"]}
-    >
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       {/* No screen was wrapping its inputs against the keyboard, so on iOS
           (which never resizes the view on its own) the keyboard just
           covered whatever field was focused. Android gets its own
@@ -101,9 +112,15 @@ export function Screen({
           <ScrollIntoViewContext.Provider value={registerFocusedField}>
             <ScrollView
               ref={scrollRef}
+              // RN's typing omits the null every ref starts out as.
+              innerViewRef={contentRef as RefObject<View>}
               contentContainerStyle={[
                 styles.grow,
                 padded && styles.padded,
+                // Bottom inset goes inside the scroll content (not around the
+                // ScrollView) so the page background still runs behind the
+                // nav bar while the last button scrolls fully clear of it.
+                { paddingBottom: (padded ? spacing.md : 0) + bottomInset },
                 keyboardHeight > 0 && { paddingBottom: keyboardHeight + spacing.lg },
               ]}
               keyboardShouldPersistTaps="handled"
@@ -112,7 +129,9 @@ export function Screen({
             </ScrollView>
           </ScrollIntoViewContext.Provider>
         ) : (
-          <View style={[styles.flex, padded && styles.padded]}>{children}</View>
+          <View style={[styles.flex, padded && styles.padded, { paddingBottom: (padded ? spacing.md : 0) + bottomInset }]}>
+            {children}
+          </View>
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>

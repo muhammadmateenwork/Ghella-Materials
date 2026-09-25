@@ -27,6 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "./Button";
 import { useKeyboardHeight } from "./Screen";
 import { TextField } from "./TextField";
+import { useBottomInset } from "../lib/safeArea";
 import { colors, fonts, radius, spacing, typography } from "../lib/theme";
 
 export function LocationPickerField({
@@ -53,6 +54,7 @@ export function LocationPickerField({
   const [addError, setAddError] = useState<string | undefined>();
   const createLocation = useCreateLocation();
   const keyboardHeight = useKeyboardHeight();
+  const bottomInset = useBottomInset();
   const selectedLabel = value ? getLocationPath(locations, value) : "Select a location";
   const flatLocations = useMemo(
     () => [...locations].sort((a, b) => getLocationPath(locations, a.id).localeCompare(getLocationPath(locations, b.id))),
@@ -133,7 +135,10 @@ export function LocationPickerField({
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Modal visible={open} animationType="slide" onRequestClose={close}>
-        <SafeAreaView style={styles.modal} edges={["top", "left", "right", "bottom"]}>
+        {/* Bottom handled with the floored inset rather than SafeAreaView's
+            own, so the pinned "Add new location" row clears the nav bar
+            even on devices that under-report it. */}
+        <SafeAreaView style={[styles.modal, { paddingBottom: bottomInset }]} edges={["top", "left", "right"]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
               {pickingParent ? "Parent location" : isAdding ? "New location" : "Select location"}

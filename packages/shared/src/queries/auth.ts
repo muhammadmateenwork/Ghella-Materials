@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { extractFunctionErrorMessage } from "../lib/errors";
 import type { LoginInput } from "../schemas/auth";
 import { useSupabaseClient } from "../supabase/context";
+import { unregisterPushToken } from "./pushTokens";
 
 export function useSignIn() {
   const supabase = useSupabaseClient();
@@ -23,7 +24,18 @@ export function useSignOut() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    // pushToken: the mobile app passes this device's push token so it's
+    // unregistered first — otherwise a signed-out phone keeps receiving
+    // that user's personal notifications. Best-effort: a failure here must
+    // never block signing out.
+    mutationFn: async (input?: { pushToken?: string | null }) => {
+      if (input?.pushToken) {
+        try {
+          await unregisterPushToken(supabase, input.pushToken);
+        } catch {
+          // ignore — see above
+        }
+      }
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       // Belt-and-suspenders: signOut() already clears the persisted

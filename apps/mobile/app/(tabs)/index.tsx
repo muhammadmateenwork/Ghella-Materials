@@ -140,7 +140,9 @@ export default function BrowseScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          // Extra room at the end when the floating "Add Material" button is
+          // showing, so the last item can scroll fully clear of it.
+          contentContainerStyle={[styles.list, isMaxTier && { paddingBottom: FAB_CLEARANCE }]}
           renderItem={({ item }) => {
             const isOwner = isMaxTier && item.created_by === profile?.id;
             return (
@@ -201,6 +203,10 @@ export default function BrowseScreen() {
   );
 }
 
+const FAB_HEIGHT = 52;
+// FAB height plus the gap above and below it.
+const FAB_CLEARANCE = FAB_HEIGHT + spacing.lg * 2;
+
 const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.sm },
   title: { marginBottom: spacing.md },
@@ -227,7 +233,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: spacing.md,
     bottom: spacing.lg,
-    height: 52,
+    height: FAB_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,

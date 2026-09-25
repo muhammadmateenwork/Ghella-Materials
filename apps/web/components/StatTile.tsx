@@ -1,9 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 
-type Tone = "primary" | "success" | "danger";
+type Tone = "primary" | "accent" | "success" | "danger";
 
 const TONE_CLASSES: Record<Tone, { icon: string; accent: string }> = {
   primary: { icon: "bg-primary-soft text-primary-dark", accent: "bg-primary" },
+  accent: { icon: "bg-accent-soft text-accent", accent: "bg-accent" },
   success: { icon: "bg-success-soft text-success", accent: "bg-success" },
   danger: { icon: "bg-danger-soft text-danger", accent: "bg-danger" },
 };
