@@ -1,7 +1,7 @@
 // Flushes the pending_item_notifications queue into a single push
-// notification, sent to every registered device — any user can browse the
-// full catalog, so "a material was added" isn't scoped to anyone
-// specific. Not called by end users directly: the database kicks it the
+// notification per device, sent to every registered device except the
+// ones belonging to whoever added the material — any user can browse the
+// full catalog, so "a material was added" isn't scoped to anyone else. Not called by end users directly: the database kicks it the
 // moment the first material of a burst is queued (with delay_seconds = 10,
 // see 0016_instant_notifications.sql), and a pg_cron job calls it every
 // minute as a safety net.
@@ -74,39 +74,51 @@ Deno.serve(async (req) => {
   if (pendingError) {
     return json({ error: pendingError.message }, 500);
   }
-  const pending = (claimed ?? []) as { id: string; item_name: string }[];
+  const pending = (claimed ?? []) as { id: string; item_name: string; created_by: string | null }[];
   if (pending.length === 0) {
     return json({ sent: 0, reason: "nothing pending" }, 200);
   }
   const ids = pending.map((row) => row.id);
 
-  const { data: tokens, error: tokensError } = await adminClient.from("push_tokens").select("token");
+  const { data: tokenRows, error: tokensError } = await adminClient.from("push_tokens").select("user_id, token");
   if (tokensError) {
     return json({ error: tokensError.message }, 500);
   }
-  if (!tokens || tokens.length === 0) {
-    // No devices registered at all — there's genuinely nothing to deliver
-    // to, so this batch is done rather than retried forever.
-    await adminClient.from("pending_item_notifications").update({ sent: true }).in("id", ids);
-    return json({ sent: 0, reason: "no registered devices", itemCount: pending.length }, 200);
-  }
 
-  const body =
-    pending.length === 1
-      ? `New material added: ${pending[0].item_name}`
-      : `${pending.length} new materials added`;
+  // Nobody is notified about materials they added themselves: each device
+  // is told only about the items in this batch that someone ELSE added.
+  // E.g. X adds 3 and Y adds 2 → X hears "2 new materials", Y hears
+  // "3 new materials", everyone else hears "5 new materials".
+  const recipients = (tokenRows ?? [])
+    .map((row) => {
+      const items = pending.filter((item) => item.created_by !== row.user_id);
+      return {
+        token: row.token as string,
+        body: items.length === 1 ? `New material added: ${items[0].item_name}` : `${items.length} new materials added`,
+        itemCount: items.length,
+      };
+    })
+    .filter((recipient) => recipient.itemCount > 0);
+
+  if (recipients.length === 0) {
+    // No devices registered, or the only devices belong to whoever added
+    // these items — nothing to deliver, so the batch is done rather than
+    // retried forever.
+    await adminClient.from("pending_item_notifications").update({ sent: true }).in("id", ids);
+    return json({ sent: 0, reason: "no other registered devices", itemCount: pending.length }, 200);
+  }
 
   const staleTokens = new Set<string>();
   let succeeded = 0;
   let lastError: string | null = null;
 
-  for (let i = 0; i < tokens.length; i += EXPO_PUSH_CHUNK_SIZE) {
-    const chunk = tokens.slice(i, i + EXPO_PUSH_CHUNK_SIZE);
-    const messages = chunk.map((row) => ({
-      to: row.token,
+  for (let i = 0; i < recipients.length; i += EXPO_PUSH_CHUNK_SIZE) {
+    const chunk = recipients.slice(i, i + EXPO_PUSH_CHUNK_SIZE);
+    const messages = chunk.map((recipient) => ({
+      to: recipient.token,
       sound: "default",
       title: "Ghella Materials",
-      body,
+      body: recipient.body,
       data: { type: "new_items" },
     }));
     try {
@@ -144,9 +156,9 @@ Deno.serve(async (req) => {
   }
 
   // "Delivered" means at least one live device actually received it, or
-  // every registered token turned out to be stale (nothing left to
+  // every recipient token turned out to be stale (nothing left to
   // deliver to) — either way, retrying this exact batch again won't help.
-  const delivered = succeeded > 0 || staleTokens.size === tokens.length;
+  const delivered = succeeded > 0 || staleTokens.size === recipients.length;
   if (delivered) {
     await adminClient.from("pending_item_notifications").update({ sent: true }).in("id", ids);
   } else {
@@ -155,5 +167,5 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ sent: succeeded, delivered, itemCount: pending.length, message: body }, 200);
+  return json({ sent: succeeded, delivered, itemCount: pending.length, recipients: recipients.length }, 200);
 });
