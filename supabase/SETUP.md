@@ -19,7 +19,7 @@ From **Project Settings → API Keys**, note:
 ## 2. Run the migrations
 
 In **SQL Editor**, open each file in `supabase/migrations/` **in order**
-(`0001` → `0014`), paste the whole file and click **Run**. Wait for
+(`0001` onwards, lowest number first), paste the whole file and click **Run**. Wait for
 "Success" before moving on to the next file.
 
 If `0008` fails with an error about `pg_cron` or `pg_net`, enable both in

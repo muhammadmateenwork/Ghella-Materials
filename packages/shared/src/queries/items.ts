@@ -245,12 +245,8 @@ export function useCreateItem() {
         .select()
         .single();
       if (error) throw error;
-
-      // Best-effort: queues this addition for the notification flush job
-      // (send-item-notifications, runs every 2 minutes via pg_cron) —
-      // never blocks or fails item creation itself.
-      void supabase.from("pending_item_notifications").insert({ item_name: input.name });
-
+      // The "new material" push is queued by the database itself (the
+      // items_queue_notification trigger, 0015) — not from here.
       return data as Item;
     },
     onSuccess: () => {

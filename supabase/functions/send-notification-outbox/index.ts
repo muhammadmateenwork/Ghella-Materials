@@ -1,8 +1,9 @@
 // Drains the notification_outbox table: for each pending row, sends an
 // Expo push to every device the recipient has registered, and — if the row
 // carries email_subject/email_body — an email to their current address.
-// Called every minute by the pg_cron job set up in
-// 0012_owner_reservation_workflow.sql, not by end users directly.
+// Not called by end users directly: the database kicks it the moment a row
+// is queued (0016_instant_notifications.sql), and the pg_cron job from
+// 0012_owner_reservation_workflow.sql calls it every minute as a safety net.
 //
 // Push and email are tracked and retried INDEPENDENTLY (push_sent_at /
 // email_sent_at, see 0013_reliable_notification_delivery.sql) — a row is
@@ -60,15 +61,14 @@ Deno.serve(async () => {
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-  const { data: pending, error: pendingError } = await adminClient
-    .from("notification_outbox")
-    .select(
-      "id, user_id, push_title, push_body, push_data, email_subject, email_body, push_sent_at, email_sent_at"
-    )
-    .lt("attempts", MAX_ATTEMPTS)
-    .or("push_sent_at.is.null,email_sent_at.is.null")
-    .order("created_at", { ascending: true })
-    .limit(BATCH_LIMIT);
+  // Claimed rather than just selected (0016_instant_notifications.sql): the
+  // database kicks this function the moment a row is queued, and the cron
+  // safety net can overlap with that run — claiming guarantees each row is
+  // handled by exactly one of them.
+  const { data: pending, error: pendingError } = await adminClient.rpc("claim_notification_outbox", {
+    p_max_attempts: MAX_ATTEMPTS,
+    p_limit: BATCH_LIMIT,
+  });
 
   if (pendingError) {
     return json({ error: pendingError.message }, 500);
@@ -146,6 +146,9 @@ Deno.serve(async () => {
       }
       const body = (await res.json()) as { data?: { status: string; details?: { error?: string } }[] };
       const tickets = body.data ?? [];
+      // Ticket ids let a delivery be traced afterwards via Expo's
+      // getReceipts API (Edge Functions → Logs).
+      console.log("Expo push tickets:", JSON.stringify(tickets));
       tickets.forEach((ticket, idx) => {
         const entry = chunkEntries[idx];
         if (!entry) return;

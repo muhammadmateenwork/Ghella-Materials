@@ -218,6 +218,7 @@ export interface Database {
         Row: {
           id: string;
           item_name: string;
+          created_by: string | null;
           created_at: string;
           sent: boolean;
         };

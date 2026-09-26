@@ -1,13 +1,19 @@
 // Flushes the pending_item_notifications queue into a single push
 // notification, sent to every registered device — any user can browse the
 // full catalog, so "a material was added" isn't scoped to anyone
-// specific. Called every 2 minutes by the pg_cron job set up in
-// 0008_push_notifications.sql, not by end users directly.
+// specific. Not called by end users directly: the database kicks it the
+// moment the first material of a burst is queued (with delay_seconds = 10,
+// see 0016_instant_notifications.sql), and a pg_cron job calls it every
+// minute as a safety net.
 //
 // Sends one push regardless of how many items queued up since the last
 // run: "New material added: <name>" for exactly one, or "<count> new
 // materials added" for a burst — so someone bulk-entering stock doesn't
-// spam every device with one notification per item.
+// spam every device with one notification per item. The delay_seconds wait
+// is what gives a burst time to finish queuing before it's collected.
+//
+// Rows are CLAIMED before sending (claim_pending_item_notifications), so a
+// kicked run and a cron run that overlap never send the same item twice.
 //
 // Rows are only marked sent AFTER a confirmed successful push (checking
 // the actual per-device result Expo's API returns, not just that the HTTP
@@ -28,6 +34,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 const EXPO_PUSH_CHUNK_SIZE = 100;
 const MAX_ATTEMPTS = 30;
+// Upper bound on the grouping wait a caller can ask for.
+const MAX_DELAY_SECONDS = 20;
 
 function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
@@ -36,25 +44,38 @@ function json(body: unknown, status: number) {
   });
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) {
     return json({ error: "Server is missing Supabase configuration" }, 500);
   }
 
+  // Kicks from the database pass delay_seconds; cron calls pass nothing.
+  let delaySeconds = 0;
+  try {
+    const payload = (await req.json()) as { delay_seconds?: unknown };
+    if (typeof payload.delay_seconds === "number") {
+      delaySeconds = Math.min(Math.max(payload.delay_seconds, 0), MAX_DELAY_SECONDS);
+    }
+  } catch {
+    // No/invalid body — no delay.
+  }
+  if (delaySeconds > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000));
+  }
+
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-  const { data: pending, error: pendingError } = await adminClient
-    .from("pending_item_notifications")
-    .select("id, item_name")
-    .eq("sent", false)
-    .lt("attempts", MAX_ATTEMPTS);
+  const { data: claimed, error: pendingError } = await adminClient.rpc("claim_pending_item_notifications", {
+    p_max_attempts: MAX_ATTEMPTS,
+  });
 
   if (pendingError) {
     return json({ error: pendingError.message }, 500);
   }
-  if (!pending || pending.length === 0) {
+  const pending = (claimed ?? []) as { id: string; item_name: string }[];
+  if (pending.length === 0) {
     return json({ sent: 0, reason: "nothing pending" }, 200);
   }
   const ids = pending.map((row) => row.id);
@@ -100,6 +121,9 @@ Deno.serve(async () => {
       }
       const responseBody = (await res.json()) as { data?: { status: string; details?: { error?: string } }[] };
       const tickets = responseBody.data ?? [];
+      // Ticket ids let a delivery be traced afterwards via Expo's
+      // getReceipts API (Edge Functions → Logs).
+      console.log("Expo push tickets:", JSON.stringify(tickets));
       tickets.forEach((ticket, idx) => {
         if (ticket.status === "ok") {
           succeeded += 1;
